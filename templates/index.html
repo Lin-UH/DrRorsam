@@ -1,0 +1,281 @@
+{% extends 'basic.html'%}
+
+{% block head %}
+    <script src="static/css/jquery-3.5.1.min.js"></script>
+    <style>
+.button {
+  font-size: 20px;
+    width: auto;/*宽度*/
+    height: 35px;
+    margin-left: 12px;
+    			text-align: center;/*字体居中*/
+    			border-radius: 3px;/*让按钮变得圆滑一点*/
+    font-weight:bold;
+}
+
+.float_div{
+position:absolute;
+width:200px;
+height:50px;
+{#border:4px solid red;#}
+right:10px;
+top:10px;
+z-index:100;  color:white;
+}
+
+{#control nav buttons#}
+.select,.input{
+box-sizing:border-box;
+ font-size: 20px;
+    width: 70px;/*宽度*/
+    height: 35px;
+}
+button:hover{/*鼠标移动时的颜色变化*/
+            background-color: deeppink;
+        }
+#usn{display: inline;}
+
+
+{#control layout#}
+#header {
+    background-color:black;
+    color:white;
+    text-align:center;
+    padding:20px;
+    height: 80px;
+}
+#nav {
+    line-height:30px;
+    background-color:#eeeeee;
+    {#height:100%;#}
+    {#bottom:0px;#}
+    width:300px;
+    float:left;
+    padding:10px;
+
+
+}
+#footer {
+    background-color:black;
+    color:white;
+    clear:both;
+    text-align:center;
+    padding:15px;
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    height: 30px;
+    z-index: 9999;
+
+}
+
+
+
+
+
+#instruction
+{
+    float:left;
+}
+</style>
+{% endblock %}
+{% block body %}
+        <script type="text/javascript">
+      $(document).ready(function() {
+          var currentcrop=1
+          var crops="none"
+          var username=document.getElementById("usn").innerHTML
+          var alreadylabeledmarkeridinthiscrop="none"
+          var selectedgreencircleid=-1
+          var markers="none";
+          $("#addname").on('click',function (e) {
+              console($(" input[ name='newname' ] ").val())
+              e.preventDefault();
+             var newname= $(" input[ name='newname' ] ").val();
+              var data = {
+                        data: JSON.stringify({
+                            'newname': newname,
+                        }),
+                    }
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/",//后端请求
+                        data: data,
+                        success: function (result) {
+                             var selectid=$("#select")
+                             selectid.append("<option value='" + newname + "'>" + newname + "</option>");
+                                    },
+                    });
+          });
+          $("#butname").on('click',function (e1) {
+               e1.preventDefault();
+               username=jQuery("#select  option:selected").text();
+              var data = {
+                        data: JSON.stringify({
+                            'username': username,
+                        }),
+                    }
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/saveusername",//后端请求
+                        data: data,
+                        success: function (result) {
+                            document.getElementById("usn").innerHTML=username
+                                    },
+                    });
+              {#                                        highx= $('#b').val();#}
+          });
+          $("#logoff").on('click',function (e2) {
+              e2.preventDefault();
+              if(username=="none")
+                  alert(username+''+is+' '+none)
+              else
+                  var data = {
+                    }
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/del_session",//后端请求
+                        data: data,
+                        success: function (result) {
+                        alert("log off success")
+                            username="none"
+                            markers="none"
+                            document.getElementById("usn").innerHTML="none"
+                            document.getElementById("img1").src='/static/1.png';
+                     document.getElementById("img2").src='/static/2.png';
+                     document.getElementById("img3").src='/static/3.png';
+                     document.getElementById("img4").src='/static/4.png';
+                      var ctx2 = document.getElementById("Canvas1");
+                var ctx3=ctx2.getContext("2d");
+                ctx3.clearRect(0, 0, cvs.width, cvs.height);
+                                    },
+                    });
+          });
+          $("#submitnumber").on('click',function (e3) {
+              e3.preventDefault();
+             crops= $(" input[ name='howmanycrops' ] ").val();
+             crops=12*crops
+              var data = {
+                        data: JSON.stringify({
+                            'crops': crops,
+                        }),
+                    }
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/savecrops",//后端请求
+                        data: data,
+                        success: function (result) {
+                             currentcrop=1
+                            document.getElementById("img1").src='/static/'+username+'/composite'+currentcrop+'.png';
+                             document.getElementById("img2").src='/static/'+username+'/dapi_'+currentcrop+'.png';
+                             document.getElementById("img3").src='/static/'+username+'/gad67_'+currentcrop+'.png';
+                             document.getElementById("img4").src='/static/'+username+'/neun_'+currentcrop+'.png';
+                             markers=result.firstregion
+                             var ctx2 = document.getElementById("Canvas1");
+                var ctx3=ctx2.getContext("2d");
+                ctx3.clearRect(0, 0, cvs.width, cvs.height);
+                 for(var k = 0; k < markers.length; k++)
+                 {
+                       ctx3.beginPath();
+                        ctx3.arc(markers[k][0],markers[k][1],15,0,2*Math.PI);
+                        ctx3.lineWidth=1;
+                        ctx3.strokeStyle="Yellow";
+                        ctx3.stroke();
+                 }
+                                    },
+                    });
+          });
+          {#$("#Brain-Cells").on('click',function (e) {#}
+          {#    e.preventDefault();#}
+          {#   var newname= $(" input[ name='newname' ] ").val();#}
+          {#    var data = {#}
+          {#              data: JSON.stringify({#}
+          {#              }),#}
+          {#          }#}
+          {#          $.ajax({#}
+          {#              type: "POST",#}
+          {#              dataType: "json",#}
+          {#              url: "/BrainCells",//后端请求#}
+          {#              data: data,#}
+          {#              success: function (result) {#}
+          {#                          },#}
+          {#          });#}
+          {#});#}
+          $.ajax({
+             type: "GET",
+             dataType: "json",
+             url: "/getnames",//后端请求
+             data: "",
+             success: function (result) {
+                 var names = result.names;
+                 var currentname = result.currents;
+                 document.getElementById("usn").innerHTML=currentname
+                 var selectid=$("#select")
+                 for (var i in names)
+                     selectid.append("<option value='" + names[i] + "'>" + names[i] + "</option>");
+             }
+         });
+
+          })
+    </script>
+<div id="header">
+<h1>Label</h1>
+<div class="float_div"><h4 id="usn">None</h4> <button class="button" id="logoff">logoff</button> </div>
+</div>
+
+<div id="nav">
+  <form method="POST">
+        <select class="select" id="select" >
+        </select>
+<button class="button" id="butname">Login</button>
+   </form>
+<br>
+
+<form method="POST">
+<input class="input"  autocomplete=off type="text" name="newname" >
+
+ <button class="button" id="addname">Regist</button> <br>
+<br>
+</form>
+<form method="POST">
+<input class="input" onkeyup="this.value=this.value.replace(/[^\d]/g,'') " onafterpaste="this.value=this.value.replace(/[^\d]/g,'') " autocomplete=off type="text" name="howmanycrops" >
+    <button class="button" id="submitnumber">submit</button> <br>
+
+</form>
+<br>
+<button class="button"  type="button" onclick="location='/Braincells'"id="Brain-Cells">Brain-Cells</button>
+<br>
+<br>
+<button class="button" id="Label-data">Label-data</button> <br>
+<br>
+<br>
+<a href="{{ url_for('admin.index') }}">Go to admin!</a> <br>
+    <a href="{{ url_for('bootstrap_example.html') }}">Go to bootstrap!</a> <br>
+
+
+
+
+
+
+{#look<br>#}
+</div>
+
+
+
+<div id="footer">
+    <p3 id="instruction">
+1. Regist a name
+2. choose a name and login
+3. start labeling
+4. save
+5. logoff
+
+</p3>
+<br>
+</div>
+{% endblock %}

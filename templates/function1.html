@@ -1,0 +1,177 @@
+{% extends 'basic.html'%}
+{% block head %}
+    <meta charset="utf-8">
+    <title>ECharts</title>
+    <!-- 引入 echarts.js -->
+    <script src="static/css/echarts.min.js"></script>
+    <script src="static/css/jquery-3.5.1.min.js"></script>
+{% endblock %}
+{% block body %}
+  <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+        <div style="height: 500px;width: 1000px;" id="Scatter"></div>
+        <script type="text/javascript">
+        $(document).ready(function() {
+            $('#notify').on('click',
+                function () {
+                    //取变量
+                    var pick = $("input[name='pick']:checked").val(); //单选框取值
+                    {#             var a= $('#a').val();#}
+                    var data = {
+                        data: JSON.stringify({
+                            'a': pick,
+                            {#                'b': b#}
+                        }),
+                    }
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/data",//后端请求
+                        data: data,
+                        success: function (result) {
+                            var MyScatter = echarts.init(document.getElementById('Scatter'));
+                            var highx=0.000000001;
+                            var highy=0.000000001;
+                            var highx1=0.000000001;
+                            var data = result.results;
+                            var textStyle = {
+                                color: '#333',
+                                fontStyle: 'normal',
+                                fontWeight: 'normal',
+                                fontFamily: '微软雅黑',
+                                fontSize: 14,
+                            };
+                            option = {
+                                tooltip: {
+                                    /*返回需要的信息*/
+                                    formatter: function (param) {
+                                        var value = param.value;
+                                        return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[0] + '(' + value[1] + ')' +
+                                            '</div>';
+                                    }
+                                },
+                                xAxis: {
+{#                                    z: function (params) {#}
+{#                                                alert(params)#}
+{#                                                var t=2#}
+{#                                                var g=1#}
+{#                                                if(highx==params[0]){#}
+{#                                                    if(this.b == params.value[0]){#}
+{#                                                        return t;#}
+{#                                                    }else {#}
+{#                                                        return g;#}
+{#                                                    }#}
+{##}
+{#                                            },#}
+                                    type: 'value',
+                                    name: result.xname,
+                                },
+                                yAxis: {
+                                    type: 'value',
+                                    name: result.yname,
+                                },
+                                series: [{
+                                    name: '',
+                                    data: data,
+                                    type: 'scatter',
+                                    symbolSize:function (params) {
+                                                var first=20
+                                                var second=2
+                                                if(highx==params[0]){
+{#                                                    if(this.b == params.value[0]){#}
+                                                        return first;
+                                                    }else {
+                                                        return second;
+                                                    }
+
+                                            },
+                                    itemStyle: {
+                                             normal: {
+                                                label:{show:false},
+                                                color: function (params){
+                                                   //通过判断选中的名字改变柱子的颜色样式
+{#                                                    alert(params.value[0])#}
+                                                    if(highx==params.value[0]){
+{#                                                    if(this.b == params.value[0]){#}
+                                                        return '#261154';
+                                                    }else {
+                                                        return '#ffc0cb';
+                                                    }
+                                             }
+                                        }
+                                      },
+                                }]
+                            };
+                            MyScatter.setOption(option);
+                            MyScatter.on('click', function (params) {
+                                var value = params.value;
+                                highx =value[0]
+                                highy =value[1]
+                                MyScatter.setOption(option);
+                                })
+                                  $("#btn1").click(function(){
+                                        highx= $('#b').val();
+{#                                        highx1=parseFloat(highx)+0.01#}
+{#                                        alert(highx1)#}
+                                        MyScatter.setOption(option);
+                                    });
+                        },
+                    });
+
+
+                })
+            {#                var getData=$.get('/data');#}
+            {#                getData.done(function (results) {#}
+            {#                    var MyScatter = echarts.init(document.getElementById('Scatter'));#}
+            {#                    var data = results.results;#}
+            {#                    alert(data)#}
+            {#                    var textStyle = {#}
+            {#                        color: '#333',#}
+            {#                        fontStyle: 'normal',#}
+            {#                        fontWeight: 'normal',#}
+            {#                        fontFamily: '微软雅黑',#}
+            {#                        fontSize: 14,#}
+            {#                    };#}
+            {#                    option = {#}
+            {#                         tooltip: {#}
+            {#                        /*返回需要的信息*/#}
+            {#                        formatter: function(param) {#}
+            {#                            var value = param.value;#}
+            {#                            return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[2] + '(' + value[1] + ')' +#}
+            {#                                '</div>';#}
+            {#                        }#}
+            {#                    },#}
+            {#                        xAxis: {#}
+            {#                            type: 'value',#}
+            {#                            name: '时间轴',#}
+            {##}
+            {#                        },#}
+            {#                        yAxis: {#}
+            {#                            type: 'value',#}
+            {#                            name: '次数值',#}
+            {#                        },#}
+            {#                        series: [{#}
+            {#                            name: '',#}
+            {#                            data: data,#}
+            {#                            type: 'scatter',#}
+            {#                            symbolSize: 3#}
+            {#                        }]#}
+            {#                    };#}
+            {##}
+            {#                    MyScatter.setOption(option);#}
+            {#                });#}
+                })
+        </script>
+<input type="range" id="range1" min="0" max="1" step="0.1" onchange="b.value=this.value"/>
+	<output id="b" for="range1" ></output>
+    <button id="btn1">draw</button>
+
+
+    <form class="center" method="POST">
+    Pick one<br /><br />
+        {% for feature in feature_names %}
+            <label><input name="pick" id="pick" type="radio" value={{feature}} />{{feature}} </label>
+        {% endfor %}
+         <button class="btn btn-primary" type="button" id="notify">submit</button>
+    </form>
+
+{% endblock %}

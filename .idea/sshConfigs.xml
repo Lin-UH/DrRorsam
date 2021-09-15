@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="maui.rcdc.uh.edu" id="2eeefd09-6898-4840-9e91-4bc097813a09" port="22" nameFormat="DESCRIPTIVE" username="lbai" />
+    </configs>
+  </component>
+</project>
