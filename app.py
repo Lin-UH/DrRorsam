@@ -8,11 +8,11 @@
 # 解包：tar zxvf filename.tar
 # 打包：tar czvf filename.tar dirname
 
-# sbatch myjob.sh
+# sbatch myjob.shg
 
 # scontrol show node
 # ssh compute-0-9
-# dos2unix xxx.sh
+# dos2unix xxx.sh ##
 # sbatch xxx.sh
 #squeue
 #先cd到program

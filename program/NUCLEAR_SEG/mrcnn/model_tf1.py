@@ -2115,6 +2115,7 @@ class MaskRCNN():
                              [detections, mrcnn_class, mrcnn_bbox,
                                  mrcnn_mask, rpn_rois, rpn_class, rpn_bbox],
                              name='mask_rcnn')
+
         # Add multi-GPU support.
         if config.GPU_COUNT > 1:
             from mrcnn.parallel_model import ParallelModel
@@ -2506,7 +2507,7 @@ class MaskRCNN():
         masks: [height, width, num_instances] Instance masks
         """
         # How many detections do we have?
-        # Detections array is padded with zeros. Find the first class_id == 0.
+        # Detections array is padded with zeros. Find the first class_id == 0.[batch, num_detections, (y1, x1, y2, x2, class_id, score)] [batch, num_detections, (y1, x1, y2, x2, class_id, score)]
         zero_ix = np.where(detections[:, 4] == 0)[0]
         N = zero_ix[0] if zero_ix.shape[0] > 0 else detections.shape[0]
 
@@ -2762,8 +2763,19 @@ class MaskRCNN():
         inputs = model.inputs
         if model.uses_learning_phase and not isinstance(K.learning_phase(), int):
             inputs += [K.learning_phase()]
+##########################################################################################
+##########################################################################################
+##########################################################################################
+##########################################################################################
+##########################################################################################
+##########################################################################################
         kf = K.function(model.inputs, list(outputs.values()))
-
+##########################################################################################
+##########################################################################################
+##########################################################################################
+##########################################################################################
+##########################################################################################
+##########################################################################################
         # Prepare inputs
         if image_metas is None:
             molded_images, image_metas, _ = self.mold_inputs(images)

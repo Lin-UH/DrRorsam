@@ -14,6 +14,10 @@
           font-size: 3.5rem;
         }
       }
+    .no-padding{
+    padding-left: 0px;
+    padding-right: 0px;
+}
 
 </style>
     <script type="text/javascript">
@@ -38,6 +42,8 @@
                 var highx=0;
                 var highy=0;
                 var filedirname;
+                //used to define zoom scale
+                var scale=1
             $(".pagination li").on('click',function (e) {
               e.preventDefault();
                     if(currentpage<=3){
@@ -229,7 +235,7 @@
              }
                     });
           });
-           $.ajax({
+            $.ajax({
              type: "GET",
              dataType: "json",
              url: "/Braincells_getbox_xy",//后端请求
@@ -372,7 +378,7 @@
                                   {
                                       currentselected=k
                                       sign=1
-                                    document.getElementById("celltype").innerHTML="Class is "+types[k];
+                                      document.getElementById("celltype").innerHTML="Class is "+types[k];
                                       document.getElementById("cell-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cell-example.png";
                                       document.getElementById("cytoplasm-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cytoplasm-example.png";
                                       document.getElementById("membrane-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/membrane-example.png";
@@ -415,6 +421,209 @@
               x = ev.offsetX;
               y = ev.offsetY;
               return {x: x, y: y};}
+
+           //used to capture mouse wheel change in display_area
+              var mouse_location_on_wholeimage={x:0,y:0}
+                var mouse_location_on_displayarea={x:0,y:0}
+            $('#display_area').bind('DOMMouseScroll mousewheel', function(e){
+                if( document.mozHidde != undefined) {
+                    //此为firefox
+                }
+                var zoom_point = getEventPosition(e)
+                temp=zoom_point.x
+                zoom_point.x=zoom_point.y
+                zoom_point.y=temp
+            {#var delta = e.originalEvent.detail || e.originalEvent.wheelDelta;#}
+            {#    Math.max(-1,Math.min(1,delta))#}
+                if(e.originalEvent.wheelDelta > 0 || e.originalEvent.detail < 0 ) {
+                    // top left start point
+                    var real_width=44800/Math.pow(2,scale)
+                    if(scale==7)
+                    {return }
+                    if(scale==1)
+                    {
+                        var real_point ={x:zoom_point.x*64/Math.pow(2,scale-1),y:zoom_point.y*64/Math.pow(2,scale-1)}
+                        mouse_location_on_wholeimage=real_point
+                        mouse_location_on_displayarea=zoom_point
+                    }
+                    else{
+                        if(zoom_point!=mouse_location_on_displayarea)
+                        {
+                            mouse_location_on_wholeimage.x=mouse_location_on_wholeimage.x+(zoom_point.x-mouse_location_on_displayarea.x)/700*44800/Math.pow(2,scale-1)
+                            mouse_location_on_wholeimage.y=mouse_location_on_wholeimage.y+(zoom_point.y-mouse_location_on_displayarea.y)/700*44800/Math.pow(2,scale-1)
+                            real_point=mouse_location_on_wholeimage
+                            mouse_location_on_displayarea=zoom_point
+                        }
+                    {#topleft_x=parseInt(JSON.stringify(document.getElementById(imgname).src.split('/').slice(-1)).slice(2,-6).split('_')[0])#}
+                    {#topleft_y=parseInt(JSON.stringify(document.getElementById(imgname).src.split('/').slice(-1)).slice(2,-6).split('_')[1])#}
+                    {#var real_point = {x:zoom_point.x*64/Math.pow(2,scale-1)+topleft_x*real_width*2,y:zoom_point.y*64/Math.pow(2,scale-1)+topleft_y*real_width*2}#}
+                    }
+                    var iwidth=700
+                    scale+=1
+                    //top left corner
+                    if(scale>7)
+                    {
+                        scale = 7
+                    }
+                    else {
+                        //real_point.x - real_width / 2  area_x1
+                        //real_point.x + real_width / 2  area_x2
+                        //real_point.y - real_width / 2  area_y1
+                        //real_point.y + real_width / 2  area_y2
+                        area_x1 = real_point.x - real_width / 2
+                        area_x2 = real_point.x + real_width / 2
+                        area_y1 = real_point.y - real_width / 2
+                        area_y2 = real_point.y + real_width / 2
+                        if(area_x1<0)
+                        {
+                            area_x1=1
+                            area_x2=real_width+1
+                        }
+                        if(area_x2>44800)
+                        {
+                            area_x1=44800-1-real_width
+                            area_x2=44800-1
+                        }
+                        if(area_y1<0)
+                        {
+                            area_y1=1
+                            area_y2=real_width+1
+                        }
+                         if(area_y2>44800)
+                        {
+                            area_y1=44800-1-real_width
+                            area_y2=44800-1
+                        }
+
+                            img_height = ((Math.floor((area_x1) / real_width) + 1) * real_width - (area_x1)) / real_width * iwidth
+                            img_width = ((Math.floor((area_y1) / real_width) + 1) * real_width - (area_y1)) / real_width * iwidth
+                            document.getElementById("firstimg").style.height = "" + (img_height).toString() + "px"
+                            document.getElementById("firstimg").style.width = "" + (img_width).toString() + "px"
+                            document.getElementById("img0").style.top = "" + (-1 * (iwidth - img_height)).toString() + "px"
+                            document.getElementById("img0").style.left = "" + (-1 * (iwidth - img_width)).toString() + "px"
+                            document.getElementById("img0").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x1) / real_width).toString() + "_" + Math.floor((area_y1) / real_width).toString() + ".png";
+
+                            document.getElementById("secondimg").style.height = "" + (img_height).toString() + "px"
+                            document.getElementById("secondimg").style.width = "" + (iwidth - img_width).toString() + "px"
+                            document.getElementById("img4").style.top = "" + (-1 * (iwidth - img_height)).toString() + "px"
+                            document.getElementById("img4").style.left = "0px"
+                            document.getElementById("img4").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x1) / real_width).toString() + "_" + Math.floor((area_y2) / real_width).toString() + ".png";
+
+                            document.getElementById("thirdimg").style.height = "" + (700 - img_height).toString() + "px"
+                            document.getElementById("thirdimg").style.width = "" + (img_width).toString() + "px"
+                            document.getElementById("img2").style.left = "" + (-1 * (iwidth - img_width)).toString() + "px"
+                            document.getElementById("img2").style.top = "0px"
+                            document.getElementById("img2").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x2) / real_width).toString() + "_" + Math.floor((area_y1) / real_width).toString() + ".png";
+
+                            document.getElementById("fourthimg").style.height = "" + (700 - img_height).toString() + "px"
+                            document.getElementById("fourthimg").style.width = "" + (iwidth - img_width).toString() + "px"
+                            document.getElementById("img3").style.top = "0px"
+                            document.getElementById("img3").style.left = "0px"
+                            document.getElementById("img3").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x2) / real_width).toString() + "_" + Math.floor((area_y2) / real_width).toString() + ".png";
+                        document.getElementById("display_area").style.cursor= "zoom-in"
+                    }}
+                else{
+
+                    // top left start point
+
+                    var real_width=44800/Math.pow(2,scale-2)
+
+                    if(scale==1)
+                    {
+                        return
+                    }
+                    else if(scale==2)
+                    {
+                        scale-=1
+                         if (zoom_point != mouse_location_on_displayarea) {
+                            mouse_location_on_wholeimage.x = mouse_location_on_wholeimage.x + (zoom_point.x - mouse_location_on_displayarea.x) / 700 * 44800 / Math.pow(2, scale - 1)
+                            mouse_location_on_wholeimage.y = mouse_location_on_wholeimage.y + (zoom_point.y - mouse_location_on_displayarea.y) / 700 * 44800 / Math.pow(2, scale - 1)
+                            real_point = mouse_location_on_wholeimage
+                            mouse_location_on_displayarea = zoom_point
+                        }
+                         document.getElementById("firstimg").style.height = "700px"
+                        document.getElementById("firstimg").style.width = "700px"
+                        document.getElementById("img0").style.top = "0px"
+                        document.getElementById("img0").style.left = "0px"
+                              document.getElementById("img0").style.height = "700px"
+                        document.getElementById("img0").style.width = "700px"
+                        document.getElementById("img0").src = "./static/type/images1.0/"+scale.toString()+"/1.png";
+
+                         document.getElementById("secondimg").style.height = "0px"
+                        document.getElementById("secondimg").style.width = "0px"
+                        document.getElementById("thirdimg").style.height = "0px"
+                        document.getElementById("thirdimg").style.width = "0px"
+                        document.getElementById("fourthimg").style.height = "0px"
+                        document.getElementById("fourthimg").style.width = "0px"
+                         document.getElementById("display_area").style.cursor = "zoom-out"
+
+                    }
+                    else {
+                        if (zoom_point != mouse_location_on_displayarea) {
+                            mouse_location_on_wholeimage.x = mouse_location_on_wholeimage.x + (zoom_point.x - mouse_location_on_displayarea.x) / 700 * 44800 / Math.pow(2, scale - 1)
+                            mouse_location_on_wholeimage.y = mouse_location_on_wholeimage.y + (zoom_point.y - mouse_location_on_displayarea.y) / 700 * 44800 / Math.pow(2, scale - 1)
+                            real_point = mouse_location_on_wholeimage
+                            mouse_location_on_displayarea = zoom_point
+                        }
+
+                        var iwidth = 700
+                        scale -= 1
+                        //top left corner
+                        //real_point.x - real_width / 2  area_x1
+                        //real_point.x + real_width / 2  area_x2
+                        //real_point.y - real_width / 2  area_y1
+                        //real_point.y + real_width / 2  area_y2
+                        area_x1 = real_point.x - real_width / 2
+                        area_x2 = real_point.x + real_width / 2
+                        area_y1 = real_point.y - real_width / 2
+                        area_y2 = real_point.y + real_width / 2
+                        if (area_x1 < 0) {
+                            area_x1 = 1
+                            area_x2 = real_width+1
+                        }
+                        if (area_x2 > 44800) {
+                            area_x1 = 44800 - 1 - real_width
+                            area_x2 = 44800 - 1
+                        }
+                        if (area_y1 < 0) {
+                            area_y1 = 1
+                            area_y2 = real_width+1
+                        }
+                        if (area_y2 > 44800) {
+                            area_y1 = 44800 - 1 - real_width
+                            area_y2 = 44800 - 1
+                        }
+
+                        img_height = ((Math.floor((area_x1) / real_width) + 1) * real_width - (area_x1)) / real_width * iwidth
+                        img_width = ((Math.floor((area_y1) / real_width) + 1) * real_width - (area_y1)) / real_width * iwidth
+                        document.getElementById("firstimg").style.height = "" + (img_height).toString() + "px"
+                        document.getElementById("firstimg").style.width = "" + (img_width).toString() + "px"
+                        document.getElementById("img0").style.top = "" + (-1 * (iwidth - img_height)).toString() + "px"
+                        document.getElementById("img0").style.left = "" + (-1 * (iwidth - img_width)).toString() + "px"
+                        document.getElementById("img0").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x1) / real_width).toString() + "_" + Math.floor((area_y1) / real_width).toString() + ".png";
+
+                        document.getElementById("secondimg").style.height = "" + (img_height).toString() + "px"
+                        document.getElementById("secondimg").style.width = "" + (iwidth - img_width).toString() + "px"
+                        document.getElementById("img4").style.top = "" + (-1 * (iwidth - img_height)).toString() + "px"
+                        document.getElementById("img4").style.left = "0px"
+                        document.getElementById("img4").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x1) / real_width).toString() + "_" + Math.floor((area_y2) / real_width).toString() + ".png";
+
+                        document.getElementById("thirdimg").style.height = "" + (700 - img_height).toString() + "px"
+                        document.getElementById("thirdimg").style.width = "" + (img_width).toString() + "px"
+                        document.getElementById("img2").style.left = "" + (-1 * (iwidth - img_width)).toString() + "px"
+                        document.getElementById("img2").style.top = "0px"
+                        document.getElementById("img2").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x2) / real_width).toString() + "_" + Math.floor((area_y1) / real_width).toString() + ".png";
+
+                        document.getElementById("fourthimg").style.height = "" + (700 - img_height).toString() + "px"
+                        document.getElementById("fourthimg").style.width = "" + (iwidth - img_width).toString() + "px"
+                        document.getElementById("img3").style.top = "0px"
+                        document.getElementById("img3").style.left = "0px"
+                        document.getElementById("img3").src = "./static/type/images1.0/" + scale.toString() + "/" + Math.floor((area_x2) / real_width).toString() + "_" + Math.floor((area_y2) / real_width).toString() + ".png";
+                        document.getElementById("display_area").style.cursor = "zoom-out"
+                    }
+                }
+                console.log(zoom_point)
+        });
 
       })
  </script>
@@ -460,11 +669,34 @@
     </div>
     </div>
     </div>
-    <div class="container-fluid">
+    <div class="container-fluid" >
     <div class="row m-0">
     <div class="col-6 ">
-            <img id="img1" style="height: 700px;width: 700px;position: absolute;top: 90px;left: 30px " src="./static/type/images/0-13000.png" />
-            <canvas width="700" height="700"style="position: absolute;top: 90px;left: 30px;" id="Canvas"></canvas>
+        <div class="container-fluid p-0" id="display_area" style="overflow: hidden;height: 700px;width: 700px;position: absolute;top: 90px;left: 30px ">
+{#            <img id="img1"  style="top:-100px;left:-100px;height: 700px;width: 700px;z-index: 1" src="./static/type/images/0-13000.png" />#}
+            <div id="firstimg" style="float:left;height: 700px;width: 700px;">
+            <img id="img0"  style="top:0px;left:0px;height: 700px;width: 700px;z-index: 1;position: relative" src="./static/type/images1.0/1/1.png" />
+            </div>
+            <div id="secondimg" style="float:left;height: 0px;width: 0px;">
+                <img id="img4" style="position: relative"/>
+            </div>
+            <div id="thirdimg" style="float:left;height: 0px;width: 0px;">
+                <img id="img2" style="position: relative"/>
+            </div>
+            <div id="fourthimg" style="float:left;height: 0px;width: 0px;">
+                <img id="img3"style="position: relative" />
+            </div>
+{#            <div id="secondimg" style="float:left;height: 350px;width: 350px;">#}
+{#                <img id="img4"  style="top:-350px;left:0px;height: 700px;width: 700px;z-index: 1;position: relative" src="./static/type/images1.0/2/0_1.png" />#}
+{#            </div>#}
+{#            <div id="thirdimg" style="float:left;height: 350px;width: 350px;">#}
+{#                <img id="img2"  style="top:0px;left:-350px;height: 700px;width: 700px;z-index: 1;position: relative" src="./static/type/images1.0/2/1_0.png" />#}
+{#            </div>#}
+{#            <div id="fourthimg" style="float:left;height: 350px;width: 350px;">#}
+{#                <img id="img3"  style="top:0px;left:0px;height: 700px;width: 700px;z-index: 1;position: relative" src="./static/type/images1.0/2/1_1.png" />#}
+{#            </div>#}
+                <canvas id="Canvas" width="700" height="700"style="top:0px;left:0px;position: absolute;z-index: 2"></canvas>
+        </div>
             <ul class="pagination pagination-sm" style="left: 200px;top: 800px;position: absolute;">
                 <li class="page-item" id="page-Previous" ><a class="page-link" href="#">Previous</a></li>
                 <li class="page-item active" id="page-1"><a class="page-link" href="#">1</a></li>
