@@ -278,7 +278,6 @@ def BrainCells_getbox_xy():
         filedirname = files[currentpage]
         break
     filedirname = filedirname.split(".")[0]
-    print(filedirname)
     start,end=int(filedirname.split("-")[0]),int(filedirname.split("-")[1])
 
     # Cell_ID_centerXY = load_Cell_ID_centerXY_pkl()
@@ -297,9 +296,8 @@ def BrainCells_getbox_xy():
     cla_name=["Neun","S100","Olig2","lba1","RECA1"]
     all_features = np.load('./static/type/vector.npy')
     for each in newc:
-        ID.append(each[0])
-        box_xywh.append([each[4]-start,each[3]-end,2*(each[2]-each[4]),2*(each[1]-each[3])])
-        print(each[4]-start,each[3]-end)
+        ID.append(int(each[0]))
+        box_xywh.append([int(each[4]-start),int(each[3]-end),int(2*(each[2]-each[4])),int(2*(each[1]-each[3]))])
         for i in range(-5,0):
             if int(each[i])==1:
                 results.append(cla_name[i])
