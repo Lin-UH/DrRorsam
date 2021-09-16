@@ -257,6 +257,7 @@ def segmentation():
 @app.route('/Braincells_getbox_xy',methods=['GET','POST'])
 def BrainCells_getbox_xy():
     # circle_seg=[]
+    from Tool.load_fTable_merged import load_Cell_ID_centerXY_pkl
     if request.method=='POST':
         data = json.loads(request.form.get('data'))
         currentpage=data['currentpage']
@@ -270,14 +271,25 @@ def BrainCells_getbox_xy():
             currentpage = 1
             session['currentpage']=currentpage
     filedirname=""
-    for root, dirs, files in os.walk("./static/type/segmentation"):
-           filedirname=dirs[currentpage]
-           break
+    # for root, dirs, files in os.walk("./static/type/segmentation"):
+    #        filedirname=dirs[currentpage]
+    #        break
+    for root, dirs, files in os.walk("./static/type/images"):
+        filedirname = files[currentpage]
+        break
+    filedirname = filedirname.split(".")[0]
     print(filedirname)
     start,end=int(filedirname.split("-")[0]),int(filedirname.split("-")[1])
-    c = pd.read_csv('./static/type/classification_table.csv')
+
+    # Cell_ID_centerXY = load_Cell_ID_centerXY_pkl()
+    c = pd.read_csv('./static/type/fTable_merged.csv')
+    # box_xywh_=[]
+    # for Cell_ID in Cell_ID_centerXY:
+    #     if (start+1000 >Cell_ID_centerXY[Cell_ID][1]) & (Cell_ID_centerXY[Cell_ID][1] > start) & (end+1000 > Cell_ID_centerXY[Cell_ID][0]) & (Cell_ID_centerXY[Cell_ID][0] > end):
+    #         print(Cell_ID_centerXY[Cell_ID])
+    #         box_xywh_.append([each[3] - start, each[4] - end, 2 * (each[1] - each[3]), 2 * (each[2] - each[4])])
     import numpy as np
-    newc = np.array(c[(start+1000 > c.centroid_x) & (c.centroid_x > start) & (end+1000 > c.centroid_y) & (c.centroid_y > end)])
+    newc = np.array(c[(start+1000 > c.centroid_y) & (c.centroid_y > start) & (end+1000 > c.centroid_x) & (c.centroid_x > end)])
     box_xywh=[]
     results =[]
     features=[]
@@ -286,7 +298,8 @@ def BrainCells_getbox_xy():
     all_features = np.load('./static/type/vector.npy')
     for each in newc:
         ID.append(each[0])
-        box_xywh.append([each[3]-start,each[4]-end,2*(each[1]-each[3]),2*(each[2]-each[4])])
+        box_xywh.append([each[4]-start,each[3]-end,2*(each[2]-each[4]),2*(each[1]-each[3])])
+        print(each[4]-start,each[3]-end)
         for i in range(-5,0):
             if int(each[i])==1:
                 results.append(cla_name[i])
@@ -295,11 +308,17 @@ def BrainCells_getbox_xy():
         features.append(all_features[int(each[0])])
     # 降维
     tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
-    X_tsne = tsne.fit_transform(features)
+    if features==[]:
+        X_tsne=features
+        return jsonify(
+            {'box_xy': box_xywh, 'results': results, 'features': features, 'ID': ID, 'filedirname': filedirname})
+    else:
+        X_tsne = tsne.fit_transform(features)
+        return jsonify(
+            {'box_xy': box_xywh, 'results': results, 'features': X_tsne.tolist(), 'ID': ID, 'filedirname': filedirname})
     # plt.scatter(X_tsne[:, 0], X_tsne[:, 1], 5, [1,2,3,4,5])  # labels为每一行对应标签，20为标记大小
     # plt.show()
     # return jsonify({'box_xy': box_xy,'results':results,'features':[X_tsne[:, 0],X_tsne[:, 1]]})
-    return jsonify({'box_xy': box_xywh,'results':results,'features':X_tsne.tolist(),'ID':ID,'filedirname':filedirname})
 
 if __name__ == '__main__':
     app_dir = os.path.realpath(os.path.dirname(__file__))
