@@ -38,6 +38,7 @@
                 var highx=0;
                 var highy=0;
                 var filedirname;
+                var contour;
             $(".pagination li").on('click',function (e) {
               e.preventDefault();
                     if(currentpage<=3){
@@ -105,6 +106,7 @@
                         url: "/Braincells_getbox_xy",//后端请求
                         data: data,
                           success: function (result) {
+                            contour = result.contour;
                            filedirname=result.filedirname
                     document.getElementById("img1").src="./static/type/images/"+filedirname+".png";
                  box_xy = result.box_xy;
@@ -118,6 +120,24 @@
                  var ctx2 = document.getElementById("Canvas");
                  var ctx3=ctx2.getContext("2d");
                  ctx3.clearRect(0, 0, cvs.width, cvs.height);
+
+                  //###########################################
+                 var imgData = ctx3.createImageData(cvs.width,cvs.height);
+
+                 for(var i = 0; i < contour.length; i++){
+                      for(var j = 0; j < contour[i].length; j++){
+                           var off = (contour[i][j][1]*7/10 * cvs.width + contour[i][j][0]*7/10) * 4;
+                           imgData.data[off  + 0] = 255;
+                           imgData.data[off  + 1] = 0;
+                           imgData.data[off   + 2] = 0;
+                           imgData.data[off  + 3] = 255;
+
+                      }
+
+                 }
+                 ctx3.putImageData(imgData, 0, 0);
+                 //###########################################
+
                  for(var i = 0; i < box_xy.length; i++)
                  {
                      ctx3.beginPath();
@@ -126,6 +146,8 @@
                      ctx3.strokeStyle = "White";
                      ctx3.stroke();
                  }
+
+
                 var MyScatter = echarts.init(document.getElementById('Scatter'));
                  features=result.features
                 var data = features;
@@ -243,12 +265,29 @@
                      for(var j = 0; j < box_xy[i].length; j++)
                      {box_xy[i][j]=box_xy[i][j]*7/10}
                  }
-
+                 // receive contour from back end
+                 contour = result.contour;
                  types= result.results;
                  ID=result.ID;
                  var ctx2 = document.getElementById("Canvas");
                  var ctx3=ctx2.getContext("2d");
                  ctx3.clearRect(0, 0, cvs.width, cvs.height);
+                 //###########################################
+                 var imgData = ctx3.createImageData(cvs.width,cvs.height);
+
+                 for(var i = 0; i < contour.length; i++){
+                      for(var j = 0; j < contour[i].length; j++){
+                           var off = (contour[i][j][1]*7/10 * cvs.width + contour[i][j][0]*7/10) * 4;
+                           imgData.data[off  + 0] = 255;
+                           imgData.data[off  + 1] = 0;
+                           imgData.data[off   + 2] = 0;
+                           imgData.data[off  + 3] = 255;
+
+                      }
+
+                 }
+                 ctx3.putImageData(imgData, 0, 0);
+                 //###########################################
                  for(var i = 0; i < box_xy.length; i++)
                  {
                      ctx3.beginPath();

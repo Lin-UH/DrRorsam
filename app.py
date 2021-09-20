@@ -287,16 +287,30 @@ def BrainCells_getbox_xy():
     #     if (start+1000 >Cell_ID_centerXY[Cell_ID][1]) & (Cell_ID_centerXY[Cell_ID][1] > start) & (end+1000 > Cell_ID_centerXY[Cell_ID][0]) & (Cell_ID_centerXY[Cell_ID][0] > end):
     #         print(Cell_ID_centerXY[Cell_ID])
     #         box_xywh_.append([each[3] - start, each[4] - end, 2 * (each[1] - each[3]), 2 * (each[2] - each[4])])
+
+    #####################load contour information#####################
+
+    #####################         future         #####################
     import numpy as np
     newc = np.array(c[(start+1000 > c.centroid_y) & (c.centroid_y > start) & (end+1000 > c.centroid_x) & (c.centroid_x > end)])
     box_xywh=[]
     results =[]
     features=[]
     ID=[]
+    ###########
+    contour=[]
+    ###########
     cla_name=["Neun","S100","Olig2","lba1","RECA1"]
     all_features = np.load('./static/type/vector.npy')
     for each in newc:
         ID.append(int(each[0]))
+
+        ###########fake for now   a cross line goes on center###############
+
+        contour.append([[int(each[4] - start)+i*k, int(each[3]-end)+j*k]for i in [-1, 1]
+            for j in [-1, 1]
+                for k in range(1,15)])
+        ###########fake for now   a cross line goes on center###############
         box_xywh.append([int(each[4]-start),int(each[3]-end),int(2*(each[2]-each[4])),int(2*(each[1]-each[3]))])
         for i in range(-5,0):
             if int(each[i])==1:
@@ -304,16 +318,22 @@ def BrainCells_getbox_xy():
         if len(box_xywh)!=len(results):
             results.append("Unasigned")
         features.append(all_features[int(each[0])])
+
+
+
+
+
+
     # 降维
     tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
     if features==[]:
         X_tsne=features
         return jsonify(
-            {'box_xy': box_xywh, 'results': results, 'features': features, 'ID': ID, 'filedirname': filedirname})
+            {'box_xy': box_xywh, 'results': results, 'features': features, 'ID': ID, 'filedirname': filedirname, "contour": contour})
     else:
         X_tsne = tsne.fit_transform(features)
         return jsonify(
-            {'box_xy': box_xywh, 'results': results, 'features': X_tsne.tolist(), 'ID': ID, 'filedirname': filedirname})
+            {'box_xy': box_xywh, 'results': results, 'features': X_tsne.tolist(), 'ID': ID, 'filedirname': filedirname, "contour": contour})
     # plt.scatter(X_tsne[:, 0], X_tsne[:, 1], 5, [1,2,3,4,5])  # labels为每一行对应标签，20为标记大小
     # plt.show()
     # return jsonify({'box_xy': box_xy,'results':results,'features':[X_tsne[:, 0],X_tsne[:, 1]]})
