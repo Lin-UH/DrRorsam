@@ -59,6 +59,7 @@
 # export CUDA_ROOT=/project/ece/roysam/lbai/DrRorsam/serverenvs/Cuda-environment/bin/
 # export LD_LIBRARY_PATH=/project/ece/roysam/lbai/DrRorsam/serverenvs/Cuda-environment/lib64/
 import os
+import pickle
 
 from flask import Flask,render_template,url_for,request,redirect,jsonify,json,session,abort
 import random
@@ -288,23 +289,24 @@ def BrainCells_getbox_xy():
     #         print(Cell_ID_centerXY[Cell_ID])
     #         box_xywh_.append([each[3] - start, each[4] - end, 2 * (each[1] - each[3]), 2 * (each[2] - each[4])])
 
-    #####################load contour information#####################
 
-    #####################         future         #####################
     import numpy as np
     newc = np.array(c[(start+1000 > c.centroid_y) & (c.centroid_y > start) & (end+1000 > c.centroid_x) & (c.centroid_x > end)])
     box_xywh=[]
     results =[]
     features=[]
     ID=[]
-    ###########
-    contour=[]
-    ###########
+    #####################load contour information#####################
+    contour = []
+    f = open('./static/type/Cell_ID_XYlist.pkl', "rb")
+    Cell_ID_XYlist = pickle.load(f)
+    f.close()
+    #####################         future         #####################
     cla_name=["Neun","S100","Olig2","lba1","RECA1"]
     all_features = np.load('./static/type/vector.npy')
     for each in newc:
         ID.append(int(each[0]))
-
+        contour.append(Cell_ID_XYlist[each[0]])
         ###########fake for now   a cross line goes on center###############
 
         contour.append([[int(each[4] - start)+i*k, int(each[3]-end)+j*k]for i in [-1, 1]

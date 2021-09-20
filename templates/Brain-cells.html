@@ -39,8 +39,11 @@
                 var highy=0;
                 var filedirname;
                 var contour;
-            $(".pagination li").on('click',function (e) {
+           $(".pagination li").on('click',function (e) {
               e.preventDefault();
+
+
+
                     if(currentpage<=3){
                         $("#page-"+currentpage+"").removeClass('active');
                     }
@@ -95,12 +98,18 @@
                          document.getElementById("page-5").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)+2)+""
                          $("#page-3").addClass('active');
                      }
-              var data = {
+          });
+
+
+
+           var data = {
                         data: JSON.stringify({
                             'currentpage': currentpage,
                         }),
                     }
-                    $.ajax({
+
+
+           $.ajax({
                         type: "POST",
                         dataType: "json",
                         url: "/Braincells_getbox_xy",//后端请求
@@ -227,19 +236,22 @@
                        }
                      var ctx2 = document.getElementById("Canvas");
                      var ctx3=ctx2.getContext("2d");
-                  if(oldcurrentselected!=-1){
+
+                  if(oldcurrentselected!=-1)
+                  {
                          ctx3.clearRect(box_xy[oldcurrentselected][0]-4, box_xy[oldcurrentselected][1]-4, box_xy[oldcurrentselected][2]+8, box_xy[oldcurrentselected][3]+8);
+                         ctx3.beginPath();
+                         ctx3.rect(box_xy[oldcurrentselected][0], box_xy[oldcurrentselected][1],box_xy[oldcurrentselected][2], box_xy[oldcurrentselected][3])
+                         ctx3.lineWidth = 1;
+                         ctx3.strokeStyle = "White";
+                         ctx3.stroke();
+                  }
+                     ctx3.clearRect(box_xy[currentselected][0]-1, box_xy[currentselected][1]-1, box_xy[currentselected][2]+2, box_xy[currentselected][3]+2);
                      ctx3.beginPath();
-                     ctx3.rect(box_xy[oldcurrentselected][0], box_xy[oldcurrentselected][1],box_xy[oldcurrentselected][2], box_xy[oldcurrentselected][3])
-                     ctx3.lineWidth = 1;
-                     ctx3.strokeStyle = "White";
-                     ctx3.stroke();}
-                 ctx3.clearRect(box_xy[currentselected][0]-1, box_xy[currentselected][1]-1, box_xy[currentselected][2]+2, box_xy[currentselected][3]+2);
-                 ctx3.beginPath();
-                 ctx3.rect( box_xy[currentselected][0],box_xy[currentselected][1] , box_xy[currentselected][2],box_xy[currentselected][3])
-                 ctx3.lineWidth = 4;
-                 ctx3.strokeStyle = "#FF0000";
-                 ctx3.stroke();
+                     ctx3.rect( box_xy[currentselected][0],box_xy[currentselected][1] , box_xy[currentselected][2],box_xy[currentselected][3])
+                     ctx3.lineWidth = 4;
+                     ctx3.strokeStyle = "#FF0000";
+                     ctx3.stroke();
                      oldcurrentselected=currentselected}
                     )
 {#                      $("#btn1").click(function(){#}
@@ -250,7 +262,9 @@
 {#                        });#}
              }
                     });
-          });
+
+
+
            $.ajax({
              type: "GET",
              dataType: "json",
@@ -398,6 +412,10 @@
 {#                        });#}
              }
          });
+
+
+
+
            {###detect click on boxes#}
            cvs = document.getElementById("Canvas");
            ctx = cvs.getContext('2d');
@@ -455,7 +473,7 @@
               y = ev.offsetY;
               return {x: x, y: y};}
 
-      })
+           })
  </script>
 {% endblock %}
 {% block body %}

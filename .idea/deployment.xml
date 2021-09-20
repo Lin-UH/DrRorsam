@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="cluster" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="cluster" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="cluster">
         <serverdata>
@@ -10,9 +10,12 @@
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/static" />
             <excludedPath path="/serverenvs" />
+            <excludedPath local="true" path="$PROJECT_DIR$/program/NUCLEAR_SEG/envs" />
+            <excludedPath local="true" path="$PROJECT_DIR$/program/NUCLEAR_SEG/data" />
           </excludedPaths>
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

@@ -16,4 +16,4 @@ module load anaconda3
 source activate
 source deactivate
 conda activate /project/ece/roysam/lbai/DrRorsam/serverenvs
-python test.py
+python extract_contours.py
