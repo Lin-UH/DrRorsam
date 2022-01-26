@@ -60,12 +60,15 @@
 # export LD_LIBRARY_PATH=/project/ece/roysam/lbai/DrRorsam/serverenvs/Cuda-environment/lib64/
 import os
 import pickle
-
+from skimage import measure
 from flask import Flask,render_template,url_for,request,redirect,jsonify,json,session,abort
 import random
 from flask_admin import Admin
+import matplotlib.pyplot as plt
+from skimage.io import imread, imsave,imshow
 from sklearn import manifold
 from flask_basicauth import BasicAuth
+import numpy as np
 # import matplotlib.pyplot as plt
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, current_user
@@ -92,6 +95,14 @@ roles_users = db.Table(
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
     db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
 )
+
+
+#################################
+
+
+#################################
+
+
 
 
 class Role(db.Model, RoleMixin):
@@ -254,7 +265,7 @@ def segmentation():
     im = Image.open(BytesIO(base64.b64decode(data)))
     im.save('image1.png', 'PNG')
     return jsonify({'box_xy': box_xywh, 'results': results, 'features': X_tsne.tolist()})
-
+import time
 @app.route('/Braincells_getbox_xy',methods=['GET','POST'])
 def BrainCells_getbox_xy():
     # circle_seg=[]
@@ -272,17 +283,26 @@ def BrainCells_getbox_xy():
             currentpage = 1
             session['currentpage']=currentpage
     filedirname=""
-    # for root, dirs, files in os.walk("./static/type/segmentation"):
-    #        filedirname=dirs[currentpage]
-    #        break
-    for root, dirs, files in os.walk("./static/type/images"):
-        filedirname = files[currentpage]
-        break
+    p=time.time()
+    print(currentpage)
+    for root, dirs, files in os.walk("./static/type/RDGH_visEnhanced_images"):
+           filedirname=files[currentpage]
+           break
+    print(time.time()-p)
+    # if request.method == 'POST':
+    #     filedirname = session['files'][currentpage]
+    # else:
+    #     for root, dirs, files in os.walk("./static/type/images"):
+    #         filedirname = files[currentpage]
+    #         if 'files' not in session:
+    #             session['files'] = files
+    #         break
     filedirname = filedirname.split(".")[0]
     start,end=int(filedirname.split("-")[0]),int(filedirname.split("-")[1])
-
     # Cell_ID_centerXY = load_Cell_ID_centerXY_pkl()
+    p=time.time()
     c = pd.read_csv('./static/type/fTable_merged.csv')
+    print(time.time() - p)
     # box_xywh_=[]
     # for Cell_ID in Cell_ID_centerXY:
     #     if (start+1000 >Cell_ID_centerXY[Cell_ID][1]) & (Cell_ID_centerXY[Cell_ID][1] > start) & (end+1000 > Cell_ID_centerXY[Cell_ID][0]) & (Cell_ID_centerXY[Cell_ID][0] > end):
@@ -290,55 +310,216 @@ def BrainCells_getbox_xy():
     #         box_xywh_.append([each[3] - start, each[4] - end, 2 * (each[1] - each[3]), 2 * (each[2] - each[4])])
 
 
-    import numpy as np
+    p=time.time()
     newc = np.array(c[(start+1000 > c.centroid_y) & (c.centroid_y > start) & (end+1000 > c.centroid_x) & (c.centroid_x > end)])
+    print(time.time() - p)
     box_xywh=[]
     results =[]
     features=[]
     ID=[]
     #####################load contour information#####################
     contour = []
-    f = open('./static/type/Cell_ID_XYlist.pkl', "rb")
-    Cell_ID_XYlist = pickle.load(f)
-    f.close()
+
+    p=time.time()
+    Cell_ID_XYlist_f = open('./static/type/Cell_ID_contours/'+filedirname+'.pkl', "rb")
+    Cell_ID_XYlist = pickle.load(Cell_ID_XYlist_f)
+    # print(newc[:,0])
+    Cell_ID_XYlist_f.close()
+    print(time.time() - p)
     #####################         future         #####################
-    cla_name=["Neun","S100","Olig2","lba1","RECA1"]
-    all_features = np.load('./static/type/vector.npy')
+    p=time.time()
     for each in newc:
         ID.append(int(each[0]))
-        contour.append(Cell_ID_XYlist[each[0]])
-        ###########fake for now   a cross line goes on center###############
-
-        contour.append([[int(each[4] - start)+i*k, int(each[3]-end)+j*k]for i in [-1, 1]
-            for j in [-1, 1]
-                for k in range(1,15)])
-        ###########fake for now   a cross line goes on center###############
+        XY=[]
+        for each_XY in Cell_ID_XYlist[each[0]]:
+                XY.append([each_XY[1]*7/10,each_XY[0]*7/10])
+        contour.append(XY)
         box_xywh.append([int(each[4]-start),int(each[3]-end),int(2*(each[2]-each[4])),int(2*(each[1]-each[3]))])
-        for i in range(-5,0):
-            if int(each[i])==1:
-                results.append(cla_name[i])
-        if len(box_xywh)!=len(results):
-            results.append("Unasigned")
-        features.append(all_features[int(each[0])])
+    print(time.time() - p)
+    ######################################
+    p=time.time()
+    f = open("./static/type/ID_topnear.pkl", "rb")
+    ID_topnear = pickle.load(f)
+    topnear = []
+    for each_ID in ID:
+        topnear.append(ID_topnear[each_ID])
+    f.close()
+    print(time.time() - p)
+    print("last")
+    ######################################
 
 
 
 
-
-
-    # 降维
-    tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
-    if features==[]:
-        X_tsne=features
+    if request.method=='POST':
         return jsonify(
-            {'box_xy': box_xywh, 'results': results, 'features': features, 'ID': ID, 'filedirname': filedirname, "contour": contour})
+            {'box_xy': box_xywh, 'results': results, 'ID': ID, 'filedirname': filedirname, "contour": contour, "currentpage":currentpage,"topnear":topnear})
     else:
-        X_tsne = tsne.fit_transform(features)
+        f = open("./static/type/ID_TSNE_XY.pkl", "rb")
+        ID_TSNE_XY = pickle.load(f)
+        for each in ID_TSNE_XY:
+            ID_TSNE_XY[each]=[float(ID_TSNE_XY[each][0]),float(ID_TSNE_XY[each][1])]
         return jsonify(
-            {'box_xy': box_xywh, 'results': results, 'features': X_tsne.tolist(), 'ID': ID, 'filedirname': filedirname, "contour": contour})
+            {'box_xy': box_xywh, 'results': results, 'features': list(ID_TSNE_XY.values()), 'ID': ID, 'filedirname': filedirname, "contour": contour,"currentpage":currentpage,"topnear":topnear})
     # plt.scatter(X_tsne[:, 0], X_tsne[:, 1], 5, [1,2,3,4,5])  # labels为每一行对应标签，20为标记大小
     # plt.show()
     # return jsonify({'box_xy': box_xy,'results':results,'features':[X_tsne[:, 0],X_tsne[:, 1]]})
+
+
+
+
+
+##########Classifier################
+import pickle
+import torch.nn as nn
+import torch.optim as optim
+from torch.optim import lr_scheduler
+from torchvision import datasets, models, transforms
+import time
+import os
+import copy
+from torch.utils.data import Dataset
+from torchvision.transforms import ToTensor
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
+import cv2
+import numpy as np
+import torch
+import random
+from PIL import Image
+class all_cells_dataset(Dataset):
+    def __init__(self, img_dir='F:/Pycharm_Projects/D-backup/Overlapping_classifier/all_cells_/', IDS=None,transform=None, target_transform=None):
+        self.IDS = IDS
+        self.img_dir = img_dir
+        self.transform = transform
+        self.target_transform = target_transform
+    def __len__(self):
+        return len(self.IDS)
+    def __getitem__(self, idx):
+        image = Image.open(self.img_dir+''+str(self.IDS[idx])+'.png')
+        if self.transform:
+            image = self.transform(image)
+        return image, self.IDS[idx]
+@app.route('/Classifier',methods=['GET'])
+def Classifier():
+    return render_template('Classifier.html')
+
+@app.route('/Classifier_Thresholding',methods=['GET','POST'])
+def Classifier_Thresholding():
+    # circle_seg=[]
+    from Tool.load_fTable_merged import load_Cell_ID_centerXY_pkl
+    if request.method=='POST':
+        print(request.form.get('currentpage'),request.form.get('threshold'))
+        data = json.loads(request.form.get('data'))
+        currentpage=data['currentpage']
+        # currentpage= request.form.get('currentpage')
+        session['currentpage']=currentpage
+        print(data['threshold'])
+        threshold = float(data['threshold'])
+        # currentpage= request.form.get('currentpage')
+        session['threshold'] = threshold
+
+    else:
+        if 'currentpage' in session:
+            currentpage = session['currentpage']
+        else:
+            currentpage = 1
+            session['currentpage']=currentpage
+
+        if 'threshold' in session:
+            threshold = session['threshold']
+        else:
+            threshold = 0.5
+            session['threshold'] = threshold
+    filedirname=""
+    p=time.time()
+    print(currentpage)
+    # for root, dirs, files in os.walk("./static/type/segmentation"):
+    #        filedirname=dirs[currentpage]
+    #        break
+    for root, dirs, files in os.walk("./static/type/RDGH_visEnhanced_images"):
+           filedirname=files[currentpage]
+           break
+    print(time.time()-p)
+    filedirname = filedirname.split(".")[0]
+    start,end=int(filedirname.split("-")[0]),int(filedirname.split("-")[1])
+    # Cell_ID_centerXY = load_Cell_ID_centerXY_pkl()
+    p=time.time()
+    c = pd.read_csv('./static/type/fTable_merged.csv')
+    print(time.time() - p)
+
+
+
+    p=time.time()
+    newc = np.array(c[(start+1000 > c.centroid_y) & (c.centroid_y > start) & (end+1000 > c.centroid_x) & (c.centroid_x > end)])
+    print(time.time() - p)
+
+
+    ID=[]
+
+
+    #####################load contour information#####################
+    contour = []
+
+    p=time.time()
+    Cell_ID_XYlist_f = open('./static/type/Cell_ID_contours/'+filedirname+'.pkl', "rb")
+    Cell_ID_XYlist = pickle.load(Cell_ID_XYlist_f)
+    Cell_ID_XYlist_f.close()
+    print(time.time() - p)
+    #####################         future         #####################
+    p=time.time()
+    for each in newc:
+        ID.append(int(each[0]))
+        XY=[]
+        for each_XY in Cell_ID_XYlist[each[0]]:
+                XY.append([each_XY[1]*8/10,each_XY[0]*8/10])
+        contour.append(XY)
+    print(time.time() - p)
+    ID_probaility_f = open('./static/type/all_cells_probaility/densenet_all_cells_probaility/' + str(start) + '-' + str(end) + '.pkl', "rb")
+    ID_probaility_resnet = pickle.load(ID_probaility_f)
+    ID_probaility_f.close()
+
+    ID_probaility_f = open('./static/type/all_cells_probaility/resnet_all_cells_probaility/' + str(start) + '-' + str(end) + '.pkl', "rb")
+    ID_probaility_densenet = pickle.load(ID_probaility_f)
+    ID_probaility_f.close()
+
+    ID_color_resnet= {}
+    for  id in ID_probaility_resnet:
+        if ID_probaility_resnet[id] > threshold:
+            ID_color_resnet[id] = 1
+        else:
+            ID_color_resnet[id] = 0
+    ID_color_densenet= {}
+    for  id in ID_probaility_densenet:
+        if ID_probaility_densenet[id] > threshold:
+            ID_color_densenet[id] = 1
+        else:
+            ID_color_densenet[id] = 0
+    red_yellow_densenet = []
+    red_yellow_resnet = []
+    for ID_ in  ID:
+        red_yellow_resnet.append(ID_color_resnet[ID_])
+        red_yellow_densenet.append(ID_color_densenet[ID_])
+    ID_probaility_densenet_ = []
+    ID_probaility_resnet_ = []
+    for ID_ in ID:
+        ID_probaility_densenet_.append(float(ID_probaility_densenet[ID_]))
+    for ID_ in ID:
+        ID_probaility_resnet_.append(float(ID_probaility_resnet[ID_]))
+
+    if request.method=='POST':
+        return jsonify(
+            {'ID_probaility_resnet': ID_probaility_resnet_,'ID': ID,'red_yellow_resnet': red_yellow_resnet, 'ID_probaility_densenet': ID_probaility_densenet_,'red_yellow_densenet': red_yellow_densenet, 'filedirname': filedirname, "contour": contour, "currentpage":currentpage})
+    else:
+        return jsonify(
+            {'ID_probaility_resnet': ID_probaility_resnet_,'ID': ID,'red_yellow_resnet': red_yellow_resnet, 'ID_probaility_densenet': ID_probaility_densenet_, 'red_yellow_densenet': red_yellow_densenet,'filedirname': filedirname, "contour": contour,"currentpage":currentpage})
+    # plt.scatter(X_tsne[:, 0], X_tsne[:, 1], 5, [1,2,3,4,5])  # labels为每一行对应标签，20为标记大小
+    # plt.show()
+    # return jsonify({'box_xy': box_xy,'results':results,'features':[X_tsne[:, 0],X_tsne[:, 1]]})
+
+
+
+
 
 if __name__ == '__main__':
     app_dir = os.path.realpath(os.path.dirname(__file__))

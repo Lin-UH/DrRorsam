@@ -56,33 +56,33 @@ import argparse
 from scipy import ndimage as ndi
 from scipy import stats
 import warnings
-
-ProjRoot = "/project/ece/roysam/xiaoyang/exps/SegmentationPipeline"
-sys.path.insert(0, os.path.join(ProjRoot,"mrcnn_Seg/supplement"))
+print(sys.path)
+ProjRoot = "/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG"
+sys.path.append("/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG/supplement")
+print(sys.path)
 import datasets_utils as dt_utils
-
-sys.path.insert(0, os.path.join(ProjRoot,"Automatic_Seg/sub_fcts"))
-import CellSegmentationfcts as seg_fcts
+sys.path.append("/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG/autoseg")
+import CellSegmentationfcts_hierarchy_wholebrain as seg_fcts
 warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser(
     description='Run Cell Phenotyping and Cell split check at the same time')
 
 parser.add_argument('-l',"--label", required=False,
-                    default="/project/ece/roysam/xiaoyang/exps/Data/50_plex/jj_final/seg_results/[retest]-autoseg-mrcnn1-bb-split-mrcnn2-bb/merged_labelmask.h5",
+                    default="/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG/results/merged_labelmask.h5",
                     metavar="/path/to/label.h5/",
                     help='the path to load merged label image')   
 parser.add_argument('-i','--img_LOC', required=False,
                     metavar = "/path/to/multiplex.tif/",
-                    default = "/project/ece/roysam/xiaoyang/exps/Data/50_plex/jj_final/images_stacked_multiplex/multiplex.tif",
+                    default = "/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG/data/8channels/multiplex.tif",
                     help='multiplex.tif')
 parser.add_argument('-f','--fTable_LOC', required=False,type=str,
                     metavar ="/path/to/fTable_merged.csv/",
-                    default ="/project/ece/roysam/xiaoyang/exps/Data/50_plex/jj_final/seg_results/[retest]-autoseg-mrcnn1-bb-split-mrcnn2-bb/fTable_merged.csv",
+                    default ="/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG/results/fTable_merged.csv",
                     help='csv file contain   ID, xmin,ymin,xmax,ymax, ID correspond to label')
 parser.add_argument('--output_dir',"-o", required= False,
                     metavar = "/path/to/maskfile/",
-                    default = "/project/ece/roysam/xiaoyang/exps/Data/50_plex/jj_final/seg_results/[retest]-autoseg-mrcnn1-bb-split-mrcnn2-bb/split_cells",
+                    default = "/project/ece/roysam/lbai/DrRorsam/program/NUCLEAR_SEG/results/split_cells",
                     help='Cell spliting results')                          
 parser.add_argument('--thres',"-t", required= False,
                     metavar = "threshold of coefficient,recomend:=0.4,force FP:=0",
@@ -98,7 +98,7 @@ parser.add_argument('--val_crops', required=False,
                     metavar="/path/to/crop_img_id.csv/",
                     help='the path to load the crop_img id for training the pixel clustering model')   
 parser.add_argument('--vis', required=False,
-                    default="0",
+                    default="True",
                     help='whether to save the vis results')
 parser.add_argument('--remove_lowconfidence', required=False, type=str,
                     default ="False",
@@ -158,7 +158,7 @@ multiplex = multiplex * np.dstack ([wholelabel>0]*multiplex.shape[2])           
 
 CTypethres_dic = {}                                                                         # the thresholds for later use
 method = "GMM"                                                                              # Method to do pixel clustering
-demo = True
+demo = False
 if demo:   # use predifined threshold to save time
 
 

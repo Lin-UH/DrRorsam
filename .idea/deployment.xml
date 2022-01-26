@@ -12,6 +12,10 @@
             <excludedPath path="/serverenvs" />
             <excludedPath local="true" path="$PROJECT_DIR$/program/NUCLEAR_SEG/envs" />
             <excludedPath local="true" path="$PROJECT_DIR$/program/NUCLEAR_SEG/data" />
+            <excludedPath path="/program/NUCLEAR_SEG/results" />
+            <excludedPath path="/program/NUCLEAR_SEG/envs" />
+            <excludedPath path="/program/NUCLEAR_SEG/data" />
+            <excludedPath local="true" path="$PROJECT_DIR$/program/NUCLEAR_SEG/results" />
           </excludedPaths>
         </serverdata>
       </paths>

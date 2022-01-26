@@ -2,12 +2,22 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/program/NUCLEAR_SEG/data" />
       <excludeFolder url="file://$MODULE_DIR$/program/NUCLEAR_SEG/results" />
       <excludeFolder url="file://$MODULE_DIR$/static" />
+      <excludeFolder url="file://$MODULE_DIR$/program" />
+      <excludeFolder url="file://$MODULE_DIR$/program/NUCLEAR_SEG/envs" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <content url="file://$MODULE_DIR$/program/NUCLEAR_SEG" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (DrRorsam) (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PyNamespacePackagesService">
+    <option name="namespacePackageFolders">
+      <list>
+        <option value="$MODULE_DIR$/program/NUCLEAR_SEG/Evaluations" />
+        <option value="$MODULE_DIR$/program/NUCLEAR_SEG/supplement" />
+      </list>
+    </option>
   </component>
 </module>

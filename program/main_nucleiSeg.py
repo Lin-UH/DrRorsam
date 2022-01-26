@@ -25,12 +25,13 @@ if __name__ == '__main__':
     # Agg backend runs without a display
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-
+import gc
 import os
 import sys
 import json
 import datetime
 import numpy as np
+import tensorflow as tf
 if "1.18" in np.version.version:
     np.random.bit_generator = np.random._bit_generator   #  error introduced by numpy 1.18 
 # import file as tiff 
@@ -43,7 +44,7 @@ import warnings
 import h5py
 warnings.filterwarnings("ignore")
 
-
+import tensorflow.keras.backend as K
 datauti_libPath = os.path.join( os.path.dirname(os.path.realpath(__file__)),"NUCLEAR_SEG/supplement")
 sys.path.insert(0, datauti_libPath)
 # import pdb; pdb.set_trace()
@@ -531,7 +532,7 @@ def train_model(model, dataset_dir,crop_size =[512,512] ,
 
 
 def detect_model(model, dataset_dir, crop_size =[512,512],batch_size = 1, result_dir = None,
-        imadjust = False ,uncertainty=False, toRGB = False, bgBoost = 1, savefig_dir = None,verbose=0):
+        imadjust = False ,uncertainty=False, toRGB = False, bgBoost = 1, savefig_dir = None,verbose=0,extract_features=False):
     """Run detection on images in the given directory."""
     print("Running on {}".format(dataset_dir))
 
@@ -577,6 +578,11 @@ def detect_model(model, dataset_dir, crop_size =[512,512],batch_size = 1, result
         dataset_test.del_whole_data()
 
     ##### start testing
+
+
+    # all_cell_features = np.empty((1,784))
+    all_cell_features = np.empty((1,256))
+    rle_len=0
     if BATCH_SIZE > 1:                                                          # batch testing  only background boosting once      
        
         for i, image_id  in enumerate( dataset_test.image_ids ) :
@@ -636,6 +642,10 @@ def detect_model(model, dataset_dir, crop_size =[512,512],batch_size = 1, result
         bgBoost_ls = []
         image_name_ls=[]
         r_masks =[]
+        feature_number=0
+        model_pooling = tf.keras.models.Sequential()
+        model_pooling.add(tf.keras.layers.MaxPooling2D(pool_size=(14, 14), padding='valid'))
+
         for i, image_id  in enumerate( dataset_test.image_ids ) :
             # Load image and run detection
             image_name = dataset_test.image_info[image_id]["id"]
@@ -650,13 +660,63 @@ def detect_model(model, dataset_dir, crop_size =[512,512],batch_size = 1, result
             image_raw = image.copy()
             if imadjust == True:
                 image = dt_utils.image_adjust(image)                            # Load over images
+            if extract_features:
+                r,mask_feature_maps_rois= model.detect([image], verbose=0,extract_features=extract_features,model_pooling=model_pooling)
+                r = r[0]
 
-            r = model.detect([image], verbose=0)[0]                
-            rle = dt_utils.maskScoreClass_to_rle(image_name, r["masks"], r["scores"],r['class_ids'] )       
+            else:
+                r = model.detect([image], verbose=0)[0]
+            if extract_features:
+                rle, index_skips,len_rle = dt_utils.maskScoreClass_to_rle(image_name, r["masks"], r["scores"], r['class_ids'],extract_features)
+                if len(index_skips)!=0:
+                    # masks_features =  np.delete(masks_features, np.array(index_skips), axis=0)
+                    mask_feature_maps_rois = np.delete(mask_feature_maps_rois, np.array(index_skips), axis=0)
+                # print("mask_feature_maps_rois shape")
+                # print(mask_feature_maps_rois.shape)
+                # print("single image masks_features_len and number of masks")
+                # print(masks_features.shape[0],len_rle)
+            else:
+                rle = dt_utils.maskScoreClass_to_rle(image_name, r["masks"], r["scores"],r['class_ids'] )
+            # print(np.mean(mask_feature_maps_rois, axis=-1).shape)
+            if len_rle == "haha":
+                all_cell_features = np.concatenate((all_cell_features, np.ones((1,256))),
+                                                   axis=0)
+                rle_len+=1
+            else:
+                all_cell_features = np.concatenate((all_cell_features,mask_feature_maps_rois), axis=0)
+                rle_len+=len_rle
+            # print(all_cell_features.shape)
+            # print(len_rle)
+            #
+            # print(mask_feature_maps_rois.shape[0])
+            # print("___________________________")
+            # print(mask_feature_maps_rois.shape)
+
+            # for each in range(mask_feature_maps_rois.shape[0]):
+            #     print(each)
+            #     with open('./NUCLEAR_SEG/Saved_features/'+str(feature_number)+'.npy', 'wb') as all_cell_mask_features_file:
+            #         np.savez_compressed(all_cell_mask_features_file, mask_feature_maps_rois[each])
+            #         print(mask_feature_maps_rois[each].shape)
+            #         feature_number+=1
+            #     all_cell_mask_features_file.close()
+
+
+
+
+            del mask_feature_maps_rois
+            # all_cell_mask_features = np.concatenate((all_cell_mask_features,mask_feature_maps_rois), axis=0)
+            # print(all_cell_mask_features.shape)
+            # print(all_cell_features.shape)
             submission.append(rle)
-            submission_local.append(rle)     
+            submission_local.append(rle)
+            if rle_len!=np.delete(all_cell_features, np.array([0]), axis=0).shape[0]:
+                print("not euqal")
+                print(rle_len, np.delete(all_cell_features, np.array([0]), axis=0).shape[0])
             r_masks = r["masks"]                                                # the fg masks
             bg_labels = dt_utils.masks_to_label(r_masks)                        # Initalize
+            # from skimage.io import imsave
+            # imsave('example'+str(i)+'.png',bg_labels)
+
             mask_bg_delta = 0
             mask_bg_previous = np.array(0)
             bg_it = {}
@@ -719,13 +779,15 @@ def detect_model(model, dataset_dir, crop_size =[512,512],batch_size = 1, result
                 bg_it = pd.DataFrame.from_dict(bg_it)        
                 bgBoost_ls.append(bg_it)
                 # import pdb;pdb.set_trace()
-
+            # _ = gc.collect()
+            # tf.reset_default_graph()
+        # print(len(submission),np.delete(all_cell_features, np.array([0]), axis=0).shape[0])
         if verbose:
             if  dataset_test. DIRorIMG == "DIR" and bgBoost > 0:        # parameter tunning, record how many iterations
                 df =  pd.concat(bgBoost_ls, axis=0, sort=False)
                 df.to_csv(os.path.join(savefig_dir,"bgBoost.csv"))
         print("Background boosting detected cells:",numOfBgCells_tol)
-                    
+
     print ("Detect image used average time (s)=",   str( ( time.time()  -  t_d) /i)  )            
     dataset_test.del_whole_data()                                                           # free space
     # Save to csv file
@@ -737,6 +799,11 @@ def detect_model(model, dataset_dir, crop_size =[512,512],batch_size = 1, result
     print("\n Raw rles of cropped images Saved to ", file_path)
     # featureTable.to_csv( os.path.join(submit_dir, "FeatureTable.csv"))
 
+
+
+    if extract_features:
+        return file_path,np.delete(all_cell_features, np.array([0]), axis=0)
+        # return file_path
     return file_path
 
 
@@ -801,7 +868,7 @@ if __name__ == '__main__':
                         default = '0',type = str, 
                         help="0 false(load all channels) ,1 true (load only the first 3 channels)")                    
     parser.add_argument('--weights', required=False,
-                        default="NUCLEAR_SEG/weights/mrcnn_weights.h5",
+                        default="NUCLEAR_SEG/weights/retrained.h5",
                         help="Path to weights .h5 file or 'coco'")
     args, _ = parser.parse_known_args()
 
@@ -841,7 +908,9 @@ if __name__ == '__main__':
                         help='the path to load the crop_img id for savinng the detection result for validation')   
         parser.add_argument('--visimg', required=False,default=None,
                             metavar="/path/to/visimg/",
-                            help='the image to superimpose detection result on')   
+                            help='the image to superimpose detection result on')
+        parser.add_argument('--extract_features', required=False, default=True,
+                            help='extract feature for each cell or not')
         args, _ = parser.parse_known_args()                         
 
     args = parser.parse_args()
@@ -1048,15 +1117,27 @@ if __name__ == '__main__':
 
         t_start = time.time()
         print ("Load data used time:", t_start - tic)            
-
-        submit_dir = detect_model(model, dataset_path, crop_size ,
+        if args.extract_features==True:
+            submit_dir,all_cell_features= detect_model(model, dataset_path, crop_size ,
                                     batch_size      = config.BATCH_SIZE,
                                     result_dir      = RESULTS_DIR,
                                     imadjust        = bool(args.imadjust),
                                     toRGB           = str2bool(args.toRGBOpt), 
                                     bgBoost         = int(args.bgBoost),
-                                    verbose         = 0
+                                    verbose         = 0,
+                                    extract_features = args.extract_features
+
                                     )
+        else:
+            submit_dir = detect_model(model, dataset_path, crop_size,
+                                                         batch_size=config.BATCH_SIZE,
+                                                         result_dir=RESULTS_DIR,
+                                                         imadjust=bool(args.imadjust),
+                                                         toRGB=str2bool(args.toRGBOpt),
+                                                         bgBoost=int(args.bgBoost),
+                                                         verbose=0,
+                                                         extract_features=args.extract_features
+                                                         )
         # submit_dir = "/brazos/roysam/xli63/exps/Data/50_plex/jj_final/seg_results_8plex_pretained/submit_20190306T165045"
         del model
 
@@ -1094,7 +1175,10 @@ if __name__ == '__main__':
                                                         submit_file      = submit_dir ,
                                                         write_folderName = RESULTS_DIR,
                                                         paras            = paras_crop,
-                                                        verbose          = 0)            
+                                                        verbose          = 0,
+                                                        all_cell_features= all_cell_features,
+                                                        #  all_cell_mask_features = all_cell_mask_features,
+                                                         extract_features=args.extract_features)
             toc2 =  time.time()
             print ("Merge detection used time = ", int(toc2 - toc1))
 

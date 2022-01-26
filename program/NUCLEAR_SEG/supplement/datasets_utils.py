@@ -106,7 +106,7 @@ def bgnoise_est(gray_image):
     x_train = np.array(x_train).reshape(-1, 1)
     cluster = mixture.GaussianMixture(n_components= 4, covariance_type='full',random_state=0,
                                 max_iter=100).fit(x_train)
-    s_order = sum( np.argsort(cluster.means_,axis=0).tolist(),[] )                              #   get the ascend order of the cluster labels
+    s_order = sum(np.argsort(cluster.means_,axis=0).tolist(),[] )                              #   get the ascend order of the cluster labels
     
     label_demo = cluster.predict(x_train)    
     # 3  Designate the threshold as the middle between 2nd and 3r clustering
@@ -322,7 +322,7 @@ def mask_to_rle(imgid, mask, scores):
         lines.append("{}, {}".format(imgid, rle))
     return "\n".join(lines)
 
-def maskScoreClass_to_rle(imgid, mask, scores,class_ids):
+def maskScoreClass_to_rle(imgid, mask, scores,class_ids,extract_features=False):
 
     '''
     imgid: image name:
@@ -331,25 +331,35 @@ def maskScoreClass_to_rle(imgid, mask, scores,class_ids):
     '''
 
     "Encodes instance masks to submission format."
-
+    index_skip = []
     assert mask.ndim == 3, "Mask must be [H, W, count]"
     # If mask is empty, return line with image ID only
     if mask.shape[-1] == 0:
+        if extract_features:
+            return "{},".format(imgid),index_skip,"haha"
         return "{},".format(imgid)
     # Remove mask overlaps
     # Multiply each instance mask by its score order
     # then take the maximum across the last dimension
     order = np.argsort(scores)[::-1] + 1  # 1-based descending
+    # print("order")
+    # print(order)
+    # print((np.reshape(order, [1, 1, -1])).shape)
     mask = np.max(mask * np.reshape(order, [1, 1, -1]), -1)
     # Loop over instance masks
     lines = []
+    # print("mask shape")
+    # print(mask.shape)
     for o in order:
         m = np.where(mask == o, 1, 0)
         # Skip if empty
         if m.sum() == 0.0:
+            index_skip.append(o-1)
             continue        
         rle = rle_encode(m)
         lines.append("{}, {},{},{}".format(imgid, rle,scores[o-1], class_ids[o-1]))
+    if extract_features:
+        return "\n".join(lines), index_skip,len(lines)
     return "\n".join(lines)
 
 def mask_bg(masks):

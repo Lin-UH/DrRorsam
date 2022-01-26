@@ -86,7 +86,7 @@ def check_coord_shape(coord,shape):
     coord_checked = [ coord[0][check_bool_xy], coord[1][check_bool_xy]]
     return coord_checked
 
-def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,local=False,verbose=0):
+def result_merge(whole_image, submit_file,all_cell_features=None, all_cell_mask_features=None,write_folderName=None, paras=None,local=False,verbose=0,extract_features=False):
     # def result_merge(whole_image, submit_files_dir,  write_folderName, paras):
     cropimg_fullPath_ls = []
     if verbose:
@@ -103,7 +103,17 @@ def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,lo
     if verbose:
         print ("loading submit.csv:",submit_file )
     spamreader      = csv.reader(csvfile, delimiter=',')
-    key_visited_ls  = []        
+    key_visited_ls  = []
+    ##################
+    index_rle_dic = {}
+    index_keep = []
+    obj_id_feature_ID ={}
+    ##################
+    len_spamreader=0
+    # for rowId, row in enumerate(spamreader):
+    #     len_spamreader+=1
+    #     293764 293763
+    # print(len_spamreader,all_cell_features.shape[0])
     for rowId, row in enumerate( spamreader ) :                                                     # load img_id,
         if rowId > 0 :                                                                              # skip first line
             if len(row)>=2 and row[1]!= '':                                                         # only read the img_id have more than one object detected
@@ -113,13 +123,23 @@ def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,lo
                     key_visited_ls.append (img_id) 
                     rle_dic[img_id] = []                                                         
                     score_dic[img_id] = []  
-                    class_dic[img_id] = []  
+                    class_dic[img_id] = []
+                ######################################################
+                    if extract_features:
+                        index_rle_dic[img_id] = []
+                ######################################################
                 # add value
                 if len (row[1]) > 2 :  # at least one object been detected
+                    sign = 1
                     rle_dic[img_id] .append ([row[1]] )                                                # load all rles for the images
+                    ######################################################
+                    if extract_features:
+                        index_rle_dic[img_id].append(rowId-1)
+                    ######################################################
                     if len(row) > 2:                                                                   # If score and class has been written in submit
                         score_dic[img_id].append ( np.float( row[2] ) )
                         class_dic[img_id].append ( np.uint8( row[3] ) )
+
 
 
     csvfile.close()      
@@ -192,8 +212,8 @@ def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,lo
                                                 j-suspicious_shift_width  : j + crop_width  + paras.crop_overlap ]         # extract the labels of subpicious window from previous merged results
         # import pdb; pdb.set_trace()
 
-        if len ( rle_dic[img_id] )> 0  :    # image level                                                               
-            for rle_id,rle in enumerate( rle_dic[img_id] ):   # object level 
+        if len ( rle_dic[img_id] )> 0  :    # image level
+            for rle_id,(rle,features_ID)in enumerate( zip(rle_dic[img_id],index_rle_dic[img_id])):   # object level
                 # rle                         = rle_dic[img_id]
                 rle = rle[0]
                 if type(rle) == list:
@@ -227,7 +247,9 @@ def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,lo
                         if visited_pixel/crop_mask.sum() < 0.3:                          # pass the nms check , add to merge label
                             obj_id = obj_id + 1    
                             objids_ls.append(obj_id)
-                            merged_label  [mask_coords_abs[0],mask_coords_abs[1]] =  obj_id                           # assign pixel of the obj to the obj_id                   
+                            merged_label  [mask_coords_abs[0],mask_coords_abs[1]] =  obj_id
+                            obj_id_feature_ID[obj_id] = features_ID
+                            index_keep.append(features_ID)
                             # import pdb; pdb.set_trace()
                             merged_borders[border_coords_abs[0],border_coords_abs[1]] =  True  
 #                             print (obj_id)
@@ -242,13 +264,28 @@ def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,lo
                                 merged_submission.append("{}, {},{},{}".format(img_id, rle,obj_score, obj_class))
                             else:
                                 merged_submission.append("{}, {},{},{}".format(img_id, rle))
+    print("merged_label.max()=", merged_label.max())
+    print("index_keep = ",len(index_keep))
+
 
     merged_label_max = merged_label.max()
+
+
+
+
+
     if verbose:
         print("merged_label.max()=", merged_label.max()) 
 
-    merged_label,__,inv = segmentation.relabel_sequential(merged_label)     # relabel
-
+    merged_label,fw,inv = segmentation.relabel_sequential(merged_label)
+    for obj_id_ in range(1,len(fw)):
+        if fw[obj_id_] == 0:
+            print("this one is ",obj_id_)
+            print("inde_keep before length",len(index_keep))
+            index_keep.remove(obj_id_feature_ID[obj_id_])
+            print("inde_keep after length", len(index_keep))
+    # relabel
+    print("after relabel merged_label.max()=", merged_label.max())
     if write_folderName is not None:
         if verbose:
             print ("......save  merged results......")
@@ -300,7 +337,15 @@ def result_merge(whole_image, submit_file,  write_folderName=None, paras=None,lo
         # # save clump_analysis table
         # clumps_df = dt_utils.clump_detection(merged_label)
         # clumps_df.to_csv(os.path.join(write_folderName, "clumps_table.csv"))
+    if extract_features:
+        print(max(index_keep))
+        print("merged_label.max()=", merged_label.max())
+        all_cell_features = all_cell_features[np.array(index_keep)]
 
+    with open('./14_14_features.npy', 'wb') as all_cell_features_file:
+        np.save(all_cell_features_file, all_cell_features)
+        print("final")
+        print(all_cell_features.shape)
     return merged_label
 
 

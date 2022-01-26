@@ -1864,6 +1864,7 @@ class MaskRCNN():
         config: A Sub-class of the Config class
         model_dir: Directory to save training logs and trained weights
         """
+        print("I am using model_tf1")
         assert mode in ['training', 'inference', 'retrain']      # [debug retrain to result log]
         self.mode = mode
         self.config = config
@@ -2885,6 +2886,9 @@ def mold_image(images, config):
     colors in RGB order.
     """
     return images.astype(np.float32) - config.MEAN_PIXEL
+
+
+
 
 
 def unmold_image(normalized_images, config):

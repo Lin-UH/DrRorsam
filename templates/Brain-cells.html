@@ -5,6 +5,24 @@
     <script src="static/css/echarts.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        button:hover{/*鼠标移动时的颜色变化*/
+            background-color: deeppink;
+        }
+        .input{
+box-sizing:border-box;
+ font-size: 18px;
+    width: 70px;/*宽度*/
+    height: 30px;
+}
+        .button {
+  font-size: 18px;
+    width: auto;/*宽度*/
+    height: 30px;
+    margin-left: 12px;
+    			text-align: center;/*字体居中*/
+    			border-radius: 3px;/*让按钮变得圆滑一点*/
+    font-weight:bold;
+}
     .bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
@@ -25,7 +43,7 @@
                 if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
                     xhr.setRequestHeader("X-CSRFToken", csrftoken)
                 }
-            }
+             }
         })
       $(document).ready(function() {
                 var currentpage=1;
@@ -39,11 +57,9 @@
                 var highy=0;
                 var filedirname;
                 var contour;
+                var topnear;
            $(".pagination li").on('click',function (e) {
               e.preventDefault();
-
-
-
                     if(currentpage<=3){
                         $("#page-"+currentpage+"").removeClass('active');
                     }
@@ -98,16 +114,12 @@
                          document.getElementById("page-5").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)+2)+""
                          $("#page-3").addClass('active');
                      }
-          });
 
-
-
-           var data = {
+                     var data = {
                         data: JSON.stringify({
                             'currentpage': currentpage,
                         }),
                     }
-
 
            $.ajax({
                         type: "POST",
@@ -115,9 +127,13 @@
                         url: "/Braincells_getbox_xy",//后端请求
                         data: data,
                           success: function (result) {
+    currentselected=-1
+                            topnear = result.topnear;
+
                             contour = result.contour;
                            filedirname=result.filedirname
-                    document.getElementById("img1").src="./static/type/images/"+filedirname+".png";
+                    document.getElementById("img1").src="./static/type/RDGH_visEnhanced_images/"+filedirname+".png";
+
                  box_xy = result.box_xy;
                  for(var i = 0; i < box_xy.length; i++)
                  {
@@ -131,129 +147,225 @@
                  ctx3.clearRect(0, 0, cvs.width, cvs.height);
 
                   //###########################################
-                 var imgData = ctx3.createImageData(cvs.width,cvs.height);
-
-                 for(var i = 0; i < contour.length; i++){
-                      for(var j = 0; j < contour[i].length; j++){
-                           var off = (contour[i][j][1]*7/10 * cvs.width + contour[i][j][0]*7/10) * 4;
-                           imgData.data[off  + 0] = 255;
-                           imgData.data[off  + 1] = 0;
-                           imgData.data[off   + 2] = 0;
-                           imgData.data[off  + 3] = 255;
-
-                      }
-
-                 }
-                 ctx3.putImageData(imgData, 0, 0);
+                 // var imgData = ctx3.createImageData(cvs.width,cvs.height);
+                 //
+                 // for(var i = 0; i < contour.length; i++){
+                 //      for(var j = 0; j < contour[i].length; j++){
+                 //           var off = (contour[i][j][1] + contour[i][j][0]* cvs.width) * 4;
+                 //           imgData.data[off  + 0] = 255;
+                 //           imgData.data[off  + 1] = 0;
+                 //           imgData.data[off   + 2] = 0;
+                 //           imgData.data[off  + 3] = 255;
+                 //
+                 //      }
+                 //
+                 // }
+                 // ctx3.putImageData(imgData, 0, 0);
                  //###########################################
-
-                 for(var i = 0; i < box_xy.length; i++)
-                 {
-                     ctx3.beginPath();
-                     ctx3.rect( box_xy[i][0],box_xy[i][1] , box_xy[i][2],box_xy[i][3])
-                     ctx3.lineWidth = 1;
-                     ctx3.strokeStyle = "White";
-                     ctx3.stroke();
+                 //###########################################
+                for(var i = 0; i < contour.length; i++)
+                {
+                       ctx3.beginPath();
+                       ctx3.lineWidth = 1;
+                       ctx3.strokeStyle = "yellow"
+                       ctx3.moveTo(contour[i][0][0], contour[i][0][1]);
+                       for(var j = 1; j < contour[i].length; j++)
+                       {
+                             ctx3.lineTo(contour[i][j][0], contour[i][j][1]);
+                       }
+                       ctx3.lineTo(contour[i][0][0], contour[i][0][1]);
+                       ctx3.stroke();
                  }
 
 
-                var MyScatter = echarts.init(document.getElementById('Scatter'));
-                 features=result.features
-                var data = features;
-                var textStyle = {
-                    color: '#333',
-                    fontStyle: 'normal',
-                    fontWeight: 'normal',
-                    fontFamily: '微软雅黑',
-                    fontSize: 14,
-                };
-                option = {
-                    tooltip: {
-                        /*返回需要的信息*/
-                        formatter: function (param) {
-                            var value = param.value;
-                            return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[0] + '  ' + value[1]  +
-                                '</div>';
-                        }
-                    },
-                    xAxis: {
-                        type: 'value',
-                        name: "X",
-                    },
-                    yAxis: {
-                        type: 'value',
-                        name: "Y",
-                    },
-                    series: [{
-                        name: '',
-                        data: data,
-                        type: 'scatter',
-                        symbolSize:function (params) {
-                                    var first=20
-                                    var second=5
-                            if(highx==params[0]){
-                                                        return first;
-                                                    }else {
-                                                        return second;
-                                                    }
-                                },
-                        itemStyle: {
-                                 normal: {
-                                    label:{show:false},
-                                    color: function (params){
-                                       //通过判断选中的名字改变柱子的颜色样式
-                                        if(highx==params.value[0]){
-                                            return '#261154';
-                                        }else {
-                                            return '#ffc0cb';
-                                        }
 
-                            }
-                          },
-                    }}]
-                };
-                MyScatter.setOption(option);
-                MyScatter.on('click', function (params) {
-                    var value = params.value;
-                    highx =value[0]
-                    highy =value[1]
-                    MyScatter.setOption(option);
-                    {#alert(highx+" "+highy)#}
-                    for(var k = 0; k < features.length; k++)
-                       {
-                            {#alert(features[k][0]+" "+features[k][1])#}
-                              if(features[k][0]==highx && features[k][1]==highy)
-                                  {
-                                      currentselected=k
-                                    document.getElementById("celltype").innerHTML="Class is "+types[k];
-                                      document.getElementById("cell-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cell-example.png";
-                                      document.getElementById("cytoplasm-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cytoplasm-example.png";
-                                      document.getElementById("membrane-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/membrane-example.png";
-                                      document.getElementById("nucleus-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/nucleus-example.png";
-                                      document.getElementById("processes-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/processes-example.png";
-                                      break;
-                                  }
-                       }
-                     var ctx2 = document.getElementById("Canvas");
-                     var ctx3=ctx2.getContext("2d");
+                 //###########################################
+                 // for(var i = 0; i < box_xy.length; i++)
+                 // {
+                 //     ctx3.beginPath();
+                 //     ctx3.rect( box_xy[i][0],box_xy[i][1] , box_xy[i][2],box_xy[i][3])
+                 //     ctx3.lineWidth = 1;
+                 //     ctx3.strokeStyle = "White";
+                 //     ctx3.stroke();
+                 // }
 
-                  if(oldcurrentselected!=-1)
-                  {
-                         ctx3.clearRect(box_xy[oldcurrentselected][0]-4, box_xy[oldcurrentselected][1]-4, box_xy[oldcurrentselected][2]+8, box_xy[oldcurrentselected][3]+8);
-                         ctx3.beginPath();
-                         ctx3.rect(box_xy[oldcurrentselected][0], box_xy[oldcurrentselected][1],box_xy[oldcurrentselected][2], box_xy[oldcurrentselected][3])
-                         ctx3.lineWidth = 1;
-                         ctx3.strokeStyle = "White";
-                         ctx3.stroke();
-                  }
-                     ctx3.clearRect(box_xy[currentselected][0]-1, box_xy[currentselected][1]-1, box_xy[currentselected][2]+2, box_xy[currentselected][3]+2);
-                     ctx3.beginPath();
-                     ctx3.rect( box_xy[currentselected][0],box_xy[currentselected][1] , box_xy[currentselected][2],box_xy[currentselected][3])
-                     ctx3.lineWidth = 4;
-                     ctx3.strokeStyle = "#FF0000";
-                     ctx3.stroke();
-                     oldcurrentselected=currentselected}
-                    )
+
+                // var MyScatter = echarts.init(document.getElementById('Scatter'));
+                //  features=result.features
+                // var data = features;
+                // var textStyle = {
+                //     color: '#333',
+                //     fontStyle: 'normal',
+                //     fontWeight: 'normal',
+                //     fontFamily: '微软雅黑',
+                //     fontSize: 14,
+                // };
+                // option = {
+                //     tooltip: {
+                //         /*返回需要的信息*/
+                //         formatter: function (param) {
+                //             var value = param.value;
+                //             return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[0] + '  ' + value[1]  +
+                //                 '</div>';
+                //         },
+                //            trigger: 'item',
+                //           axisPointer: {
+                //               type: 'cross'
+                //             }
+                //     },
+                //     toolbox:{
+                //     right: 20,
+                //           feature: {
+                //             dataZoom: {}
+                //           }
+                //
+                //     },
+                //     dataZoom: [
+                //           {
+                //             type: 'inside'
+                //           },
+                //           {
+                //             type: 'slider',
+                //             showDataShadow: false,
+                //             handleIcon:
+                //               'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                //             handleSize: '80%'
+                //           },
+                //           {
+                //             type: 'inside',
+                //             orient: 'vertical'
+                //           },
+                //           {
+                //             type: 'slider',
+                //             orient: 'vertical',
+                //             showDataShadow: false,
+                //             handleIcon:
+                //               'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                //             handleSize: '80%'
+                //           }
+                //         ],
+                //
+                //
+                //     xAxis: {
+                //         type: 'value',
+                //         name: "X",
+                //     },
+                //     yAxis: {
+                //         type: 'value',
+                //         name: "Y",
+                //     },
+                //     series: [{
+                //         name: "ID",
+                //         data: data,
+                //         symbolSize: 5,
+                //         type: 'scatter',
+                //         symbolSize:function (params) {
+                //                     var first=20
+                //                     var second=10
+                //             if(highx==params[0] && highy==params[1]){
+                //                                         return first;
+                //                                     }else {
+                //                                         return second;
+                //                                     }
+                //                 },
+                //         itemStyle: {
+                //                  normal: {
+                //                     label:{show:false},
+                //                     color: function (params) {
+                //
+                //                         //通过判断选中的名字改变柱子的颜色样式
+                //                         if (currentselected == -1) {
+                //                          return '#ffc0cb';
+                //                         }
+                //                         else
+                //                         {
+                //                         if (highx==params.value[0] && highy==params.value[1]) {
+                //                             return '#261154';
+                //                         } else {
+                //                             return '#ffc0cb';
+                //                         }
+                //                         }
+                //             }
+                //           },
+                //     }}]
+                // };
+                // MyScatter.setOption(option);
+                // MyScatter.on('click', function (params) {
+                //     var value = params.value;
+                //     highx =value[0]
+                //     highy =value[1]
+                //     MyScatter.setOption(option);
+                //     {#alert(highx+" "+highy)#}
+                //     for(var k = 0; k < features.length; k++)
+                //        {
+                //             {#alert(features[k][0]+" "+features[k][1])#}
+                //               if(features[k][0]==highx && features[k][1]==highy)
+                //                   {
+                //                       currentselected=k
+                //                                                      document.getElementById("description").innerHTML="Current ID is "+ID[k];
+                //                   document.getElementById("one").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+1)+".png";
+                //                   document.getElementById("two").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+2)+".png";
+                //                   document.getElementById("three").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+3)+".png";
+                //                   document.getElementById("four").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+4)+".png";
+                //                   document.getElementById("five").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+5)+".png";
+                //                   document.getElementById("six").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+6)+".png";
+                //                   document.getElementById("seven").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+7)+".png";
+                //                   document.getElementById("eight").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+8)+".png";
+                //                   document.getElementById("nine").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+9)+".png";
+                //                   document.getElementById("ten").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+10)+".png";
+                //
+                //                   document.getElementById("one_").innerHTML= ID[k]+1;
+                //                   document.getElementById("two_").innerHTML=ID[k]+2;
+                //                   document.getElementById("three_").innerHTML=ID[k]+3;
+                //                   document.getElementById("four_").innerHTML=ID[k]+4;
+                //                   document.getElementById("five_").innerHTML=ID[k]+5;
+                //                   document.getElementById("six_").innerHTML=ID[k]+6;
+                //                   document.getElementById("seven_").innerHTML=ID[k]+7;
+                //                   document.getElementById("eight_").innerHTML=ID[k]+8;
+                //                   document.getElementById("nine_").innerHTML=ID[k]+9;
+                //                   document.getElementById("ten_").innerHTML=ID[k]+10;
+                //
+                //
+                //                       break;
+                //                   }
+                //        }
+                //      var ctx2 = document.getElementById("Canvas");
+                //      var ctx3=ctx2.getContext("2d");
+                //
+                //   if(oldcurrentselected!=-1)
+                //  {
+                //      ctx3.beginPath();
+                //      ctx3.lineWidth = 1;
+                //      ctx3.strokeStyle = "yellow"
+                //      ctx3.moveTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                //      for(var j = 1; j < contour[oldcurrentselected].length; j++)
+                //      {
+                //          ctx3.lineTo(contour[oldcurrentselected][j][0], contour[oldcurrentselected][j][1]);
+                //      }
+                //      ctx3.lineTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                //      ctx3.stroke();
+                //  }
+                //  ctx3.beginPath();
+                //  ctx3.lineWidth = 1;
+                //  ctx3.strokeStyle = "red"
+                //  ctx3.moveTo(contour[currentselected][0][0], contour[currentselected][0][1]);
+                //  for(var j = 1; j < contour[currentselected].length; j++)
+                //  {
+                //      ctx3.lineTo(contour[currentselected][j][0], contour[currentselected][j][1]);
+                //  }
+                //  ctx3.lineTo(contour[currentselected][0][0], contour[currentselected][0][1]);
+                //  ctx3.stroke();
+                //
+                //
+                //
+                //
+                //
+                //      oldcurrentselected=currentselected
+                //
+                //
+                //
+                // }
+                //     )
 {#                      $("#btn1").click(function(){#}
 {#                            highx= $('#b').val();#}
 {#                                        highx1=parseFloat(highx)+0.01#}
@@ -262,7 +374,302 @@
 {#                        });#}
              }
                     });
+          });
 
+
+
+             $("#jump-page").on('click',function (e1) {
+               e1.preventDefault();
+
+                         if(currentpage<=3){
+                        $("#page-"+currentpage+"").removeClass('active');
+                    }
+                    else{
+                         $("#page-3").removeClass('active');
+                    }
+                            currentpage=parseInt($(" input[ name='jump-number' ] ").val())
+                 alert(currentpage)
+                    if(currentpage<=3)
+                     {
+                         document.getElementById("page-1").innerHTML="<a class=\"page-link\" href=\"#\">1"
+                         document.getElementById("page-2").innerHTML="<a class=\"page-link\" href=\"#\">2"
+                         document.getElementById("page-3").innerHTML="<a class=\"page-link\" href=\"#\">3"
+                         document.getElementById("page-4").innerHTML="<a class=\"page-link\" href=\"#\">4"
+                         document.getElementById("page-5").innerHTML="<a class=\"page-link\" href=\"#\">5"
+
+                         $("#page-"+currentpage+"").addClass('active');
+                     }
+                     else
+                     {
+                         document.getElementById("page-1").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)-2)+""
+                         document.getElementById("page-2").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)-1)+""
+                         document.getElementById("page-3").innerHTML="<a class=\"page-link\" href=\"#\">"+parseInt(currentpage)+""
+                         document.getElementById("page-4").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)+1)+""
+                         document.getElementById("page-5").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)+2)+""
+                         $("#page-3").addClass('active');
+                     }
+
+                     var data = {
+                        data: JSON.stringify({
+                            'currentpage': currentpage,
+                        }),
+                    }
+
+           $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/Braincells_getbox_xy",//后端请求
+                        data: data,
+                          success: function (result) {
+
+                            topnear = result.topnear;
+
+                            contour = result.contour;
+                           filedirname=result.filedirname
+                              currentselected=-1
+                    document.getElementById("img1").src="./static/type/RDGH_visEnhanced_images/"+filedirname+".png";
+
+                 box_xy = result.box_xy;
+                 for(var i = 0; i < box_xy.length; i++)
+                 {
+                     for(var j = 0; j < box_xy[i].length; j++)
+                     {box_xy[i][j]=box_xy[i][j]*7/10}
+                 }
+                 types= result.results;
+                 ID=result.ID;
+                 var ctx2 = document.getElementById("Canvas");
+                 var ctx3=ctx2.getContext("2d");
+                 ctx3.clearRect(0, 0, cvs.width, cvs.height);
+
+                  //###########################################
+                 // var imgData = ctx3.createImageData(cvs.width,cvs.height);
+                 //
+                 // for(var i = 0; i < contour.length; i++){
+                 //      for(var j = 0; j < contour[i].length; j++){
+                 //           var off = (contour[i][j][1] + contour[i][j][0]* cvs.width) * 4;
+                 //           imgData.data[off  + 0] = 255;
+                 //           imgData.data[off  + 1] = 0;
+                 //           imgData.data[off   + 2] = 0;
+                 //           imgData.data[off  + 3] = 255;
+                 //
+                 //      }
+                 //
+                 // }
+                 // ctx3.putImageData(imgData, 0, 0);
+                 //###########################################
+                 //###########################################
+                for(var i = 0; i < contour.length; i++)
+                {
+                       ctx3.beginPath();
+                       ctx3.lineWidth = 1;
+                       ctx3.strokeStyle = "yellow"
+                       ctx3.moveTo(contour[i][0][0], contour[i][0][1]);
+                       for(var j = 1; j < contour[i].length; j++)
+                       {
+                             ctx3.lineTo(contour[i][j][0], contour[i][j][1]);
+                       }
+                       ctx3.lineTo(contour[i][0][0], contour[i][0][1]);
+                       ctx3.stroke();
+                 }
+
+
+
+                 //###########################################
+                 // for(var i = 0; i < box_xy.length; i++)
+                 // {
+                 //     ctx3.beginPath();
+                 //     ctx3.rect( box_xy[i][0],box_xy[i][1] , box_xy[i][2],box_xy[i][3])
+                 //     ctx3.lineWidth = 1;
+                 //     ctx3.strokeStyle = "White";
+                 //     ctx3.stroke();
+                 // }
+
+
+                // var MyScatter = echarts.init(document.getElementById('Scatter'));
+                //  features=result.features
+                // var data = features;
+                // var textStyle = {
+                //     color: '#333',
+                //     fontStyle: 'normal',
+                //     fontWeight: 'normal',
+                //     fontFamily: '微软雅黑',
+                //     fontSize: 14,
+                // };
+                // option = {
+                //     tooltip: {
+                //         /*返回需要的信息*/
+                //         formatter: function (param) {
+                //             var value = param.value;
+                //             return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[0] + '  ' + value[1]  +
+                //                 '</div>';
+                //         },
+                //            trigger: 'item',
+                //           axisPointer: {
+                //               type: 'cross'
+                //             }
+                //     },
+                //     toolbox:{
+                //     right: 20,
+                //           feature: {
+                //             dataZoom: {}
+                //           }
+                //
+                //     },
+                //     dataZoom: [
+                //           {
+                //             type: 'inside'
+                //           },
+                //           {
+                //             type: 'slider',
+                //             showDataShadow: false,
+                //             handleIcon:
+                //               'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                //             handleSize: '80%'
+                //           },
+                //           {
+                //             type: 'inside',
+                //             orient: 'vertical'
+                //           },
+                //           {
+                //             type: 'slider',
+                //             orient: 'vertical',
+                //             showDataShadow: false,
+                //             handleIcon:
+                //               'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                //             handleSize: '80%'
+                //           }
+                //         ],
+                //
+                //
+                //     xAxis: {
+                //         type: 'value',
+                //         name: "X",
+                //     },
+                //     yAxis: {
+                //         type: 'value',
+                //         name: "Y",
+                //     },
+                //     series: [{
+                //         name: "ID",
+                //         data: data,
+                //         symbolSize: 5,
+                //         type: 'scatter',
+                //         symbolSize:function (params) {
+                //                     var first=20
+                //                     var second=10
+                //             if(highx==params[0] && highy==params[1]){
+                //                                         return first;
+                //                                     }else {
+                //                                         return second;
+                //                                     }
+                //                 },
+                //         itemStyle: {
+                //                  normal: {
+                //                     label:{show:false},
+                //                     color: function (params) {
+                //
+                //                         //通过判断选中的名字改变柱子的颜色样式
+                //                         if (currentselected == -1) {
+                //                          return '#ffc0cb';
+                //                         }
+                //                         else
+                //                         {
+                //                         if (highx==params.value[0] && highy==params.value[1]) {
+                //                             return '#261154';
+                //                         } else {
+                //                             return '#ffc0cb';
+                //                         }
+                //                         }
+                //             }
+                //           },
+                //     }}]
+                // };
+                // MyScatter.setOption(option);
+                // MyScatter.on('click', function (params) {
+                //     var value = params.value;
+                //     highx =value[0]
+                //     highy =value[1]
+                //     MyScatter.setOption(option);
+                //     {#alert(highx+" "+highy)#}
+                //     for(var k = 0; k < features.length; k++)
+                //        {
+                //             {#alert(features[k][0]+" "+features[k][1])#}
+                //               if(features[k][0]==highx && features[k][1]==highy)
+                //                   {
+                //                       currentselected=k
+                //                                                      document.getElementById("description").innerHTML="Current ID is "+ID[k];
+                //                   document.getElementById("one").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+1)+".png";
+                //                   document.getElementById("two").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+2)+".png";
+                //                   document.getElementById("three").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+3)+".png";
+                //                   document.getElementById("four").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+4)+".png";
+                //                   document.getElementById("five").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+5)+".png";
+                //                   document.getElementById("six").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+6)+".png";
+                //                   document.getElementById("seven").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+7)+".png";
+                //                   document.getElementById("eight").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+8)+".png";
+                //                   document.getElementById("nine").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+9)+".png";
+                //                   document.getElementById("ten").src="./static/type/RDGH_visEnhanced_all_cells/"+(ID[k]+10)+".png";
+                //
+                //                   document.getElementById("one_").innerHTML= ID[k]+1;
+                //                   document.getElementById("two_").innerHTML=ID[k]+2;
+                //                   document.getElementById("three_").innerHTML=ID[k]+3;
+                //                   document.getElementById("four_").innerHTML=ID[k]+4;
+                //                   document.getElementById("five_").innerHTML=ID[k]+5;
+                //                   document.getElementById("six_").innerHTML=ID[k]+6;
+                //                   document.getElementById("seven_").innerHTML=ID[k]+7;
+                //                   document.getElementById("eight_").innerHTML=ID[k]+8;
+                //                   document.getElementById("nine_").innerHTML=ID[k]+9;
+                //                   document.getElementById("ten_").innerHTML=ID[k]+10;
+                //
+                //
+                //                       break;
+                //                   }
+                //        }
+                //      var ctx2 = document.getElementById("Canvas");
+                //      var ctx3=ctx2.getContext("2d");
+                //
+                //   if(oldcurrentselected!=-1)
+                //  {
+                //      ctx3.beginPath();
+                //      ctx3.lineWidth = 1;
+                //      ctx3.strokeStyle = "yellow"
+                //      ctx3.moveTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                //      for(var j = 1; j < contour[oldcurrentselected].length; j++)
+                //      {
+                //          ctx3.lineTo(contour[oldcurrentselected][j][0], contour[oldcurrentselected][j][1]);
+                //      }
+                //      ctx3.lineTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                //      ctx3.stroke();
+                //  }
+                //  ctx3.beginPath();
+                //  ctx3.lineWidth = 1;
+                //  ctx3.strokeStyle = "red"
+                //  ctx3.moveTo(contour[currentselected][0][0], contour[currentselected][0][1]);
+                //  for(var j = 1; j < contour[currentselected].length; j++)
+                //  {
+                //      ctx3.lineTo(contour[currentselected][j][0], contour[currentselected][j][1]);
+                //  }
+                //  ctx3.lineTo(contour[currentselected][0][0], contour[currentselected][0][1]);
+                //  ctx3.stroke();
+                //
+                //
+                //
+                //
+                //
+                //      oldcurrentselected=currentselected
+                //
+                //
+                //
+                // }
+                //     )
+{#                      $("#btn1").click(function(){#}
+{#                            highx= $('#b').val();#}
+{#                                        highx1=parseFloat(highx)+0.01#}
+{#                                        alert(highx1)#}
+{#                            MyScatter.setOption(option);#}
+{#                        });#}
+             }
+                    });
+          });
 
 
            $.ajax({
@@ -272,7 +679,7 @@
              data: "",
              success: function (result) {
                  filedirname=result.filedirname
-                    document.getElementById("img1").src="./static/type/images/"+filedirname+".png";
+                    document.getElementById("img1").src="./static/type/RDGH_visEnhanced_images/"+filedirname+".png";
                  box_xy = result.box_xy;
                  for(var i = 0; i < box_xy.length; i++)
                  {
@@ -280,6 +687,7 @@
                      {box_xy[i][j]=box_xy[i][j]*7/10}
                  }
                  // receive contour from back end
+                 topnear = result.topnear;
                  contour = result.contour;
                  types= result.results;
                  ID=result.ID;
@@ -287,29 +695,82 @@
                  var ctx3=ctx2.getContext("2d");
                  ctx3.clearRect(0, 0, cvs.width, cvs.height);
                  //###########################################
-                 var imgData = ctx3.createImageData(cvs.width,cvs.height);
-
-                 for(var i = 0; i < contour.length; i++){
-                      for(var j = 0; j < contour[i].length; j++){
-                           var off = (contour[i][j][1]*7/10 * cvs.width + contour[i][j][0]*7/10) * 4;
-                           imgData.data[off  + 0] = 255;
-                           imgData.data[off  + 1] = 0;
-                           imgData.data[off   + 2] = 0;
-                           imgData.data[off  + 3] = 255;
-
-                      }
-
-                 }
-                 ctx3.putImageData(imgData, 0, 0);
+                 // var imgData = ctx3.createImageData(cvs.width,cvs.height);
+                 //
+                 // for(var i = 0; i < contour.length; i++){
+                 //      for(var j = 0; j < contour[i].length; j++){
+                 //           var off = (contour[i][j][1] * cvs.width + contour[i][j][0]) * 4;
+                 //           imgData.data[off  + 0] = 255;
+                 //           imgData.data[off  + 1] = 0;
+                 //           imgData.data[off   + 2] = 0;
+                 //           imgData.data[off  + 3] = 255;
+                 //
+                 //      }
+                 //
+                 // }
+                 // ctx3.putImageData(imgData, 0, 0);
                  //###########################################
-                 for(var i = 0; i < box_xy.length; i++)
-                 {
-                     ctx3.beginPath();
-                     ctx3.rect( box_xy[i][0],box_xy[i][1] , box_xy[i][2],box_xy[i][3])
-                     ctx3.lineWidth = 1;
-                     ctx3.strokeStyle = "White";
-                     ctx3.stroke();
+                 //###########################################
+                for(var i = 0; i < contour.length; i++)
+                {
+                       ctx3.beginPath();
+                       ctx3.lineWidth = 1;
+                       ctx3.strokeStyle = "yellow"
+                       ctx3.moveTo(contour[i][0][0], contour[i][0][1]);
+                       for(var j = 1; j < contour[i].length; j++)
+                       {
+                             ctx3.lineTo(contour[i][j][0], contour[i][j][1]);
+                       }
+                       ctx3.lineTo(contour[i][0][0], contour[i][0][1]);
+                       ctx3.stroke();
                  }
+
+
+
+                 //###########################################
+                 currentpage = result.currentpage;
+                     for(var i = 1; i < 6; i++)
+                     {
+                             $("#page-"+i+"").removeClass('active');
+                     }
+
+                        if(currentpage<=3)
+                     {
+                         document.getElementById("page-1").innerHTML="<a class=\"page-link\" href=\"#\">1"
+                         document.getElementById("page-2").innerHTML="<a class=\"page-link\" href=\"#\">2"
+                         document.getElementById("page-3").innerHTML="<a class=\"page-link\" href=\"#\">3"
+                         document.getElementById("page-4").innerHTML="<a class=\"page-link\" href=\"#\">4"
+                         document.getElementById("page-5").innerHTML="<a class=\"page-link\" href=\"#\">5"
+
+                         $("#page-"+currentpage+"").addClass('active');
+                     }
+                     else
+                     {
+                         document.getElementById("page-1").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)-2)+""
+                         document.getElementById("page-2").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)-1)+""
+                         document.getElementById("page-3").innerHTML="<a class=\"page-link\" href=\"#\">"+parseInt(currentpage)+""
+                         document.getElementById("page-4").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)+1)+""
+                         document.getElementById("page-5").innerHTML="<a class=\"page-link\" href=\"#\">"+(parseInt(currentpage)+2)+""
+                         $("#page-3").addClass('active');
+                     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 var MyScatter = echarts.init(document.getElementById('Scatter'));
                  features=result.features
                 var data = features;
@@ -327,8 +788,47 @@
                             var value = param.value;
                             return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[0] + '  ' + value[1]  +
                                 '</div>';
-                        }
+                        },
+                        trigger: 'item',
+                          axisPointer: {
+                              type: 'cross'
+                            }
                     },
+
+                    toolbox:{
+                    right: 20,
+                          feature: {
+                            dataZoom: {}
+                          }
+
+                    },
+                    dataZoom: [
+                          {
+                            type: 'inside'
+                          },
+                          {
+                            type: 'slider',
+                            showDataShadow: false,
+                            handleIcon:
+                              'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                            handleSize: '80%'
+                          },
+                          {
+                            type: 'inside',
+                            orient: 'vertical'
+                          },
+                          {
+                            type: 'slider',
+                            orient: 'vertical',
+                            showDataShadow: false,
+                            handleIcon:
+                              'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                            handleSize: '80%'
+                          }
+                        ],
+
+
+
                     xAxis: {
                         type: 'value',
                         name: "X",
@@ -338,13 +838,15 @@
                         name: "Y",
                     },
                     series: [{
-                        name: '',
+
+                        name: "ID",
                         data: data,
+                        symbolSize: 5,
                         type: 'scatter',
                         symbolSize:function (params) {
                                     var first=20
-                                    var second=5
-                            if(highx==params[0]){
+                                    var second=1
+                            if(highx==params[0] && highy==params[1]){
                                                         return first;
                                                     }else {
                                                         return second;
@@ -355,10 +857,16 @@
                                     label:{show:false},
                                     color: function (params){
                                        //通过判断选中的名字改变柱子的颜色样式
-                                        if(highx==params.value[0]){
+                                        if (currentselected == -1) {
+                                         return '#ffc0cb';
+                                        }
+                                        else
+                                        {
+                                        if (highx==params.value[0] && highy==params.value[1]) {
                                             return '#261154';
-                                        }else {
+                                        } else {
                                             return '#ffc0cb';
+                                        }
                                         }
 
                             }
@@ -378,29 +886,56 @@
                               if(features[k][0]==highx && features[k][1]==highy)
                                   {
                                       currentselected=k
-                                    document.getElementById("celltype").innerHTML="Class is "+types[k];
-                                      document.getElementById("cell-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cell-example.png";
-                                      document.getElementById("cytoplasm-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cytoplasm-example.png";
-                                      document.getElementById("membrane-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/membrane-example.png";
-                                      document.getElementById("nucleus-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/nucleus-example.png";
-                                      document.getElementById("processes-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/processes-example.png";
+                                  document.getElementById("description").innerHTML="Current ID is "+ID[k];
+                                  document.getElementById("one").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][0])+".png";
+                                  document.getElementById("two").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][1])+".png";
+                                  document.getElementById("three").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][2])+".png";
+                                  document.getElementById("four").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][3])+".png";
+                                  document.getElementById("five").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][4])+".png";
+                                  document.getElementById("six").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][5])+".png";
+                                  document.getElementById("seven").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][6])+".png";
+                                  document.getElementById("eight").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][7])+".png";
+                                  document.getElementById("nine").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][8])+".png";
+                                  document.getElementById("ten").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][9])+".png";
+
+
+                                   document.getElementById("one_").innerHTML= topnear[k][0];
+                                  document.getElementById("two_").innerHTML=topnear[k][1];
+                                  document.getElementById("three_").innerHTML=topnear[k][2];
+                                  document.getElementById("four_").innerHTML=topnear[k][3];
+                                  document.getElementById("five_").innerHTML=topnear[k][4];
+                                  document.getElementById("six_").innerHTML=topnear[k][5];
+                                  document.getElementById("seven_").innerHTML=topnear[k][6];
+                                  document.getElementById("eight_").innerHTML=topnear[k][7];
+                                  document.getElementById("nine_").innerHTML=topnear[k][8];
+                                  document.getElementById("ten_").innerHTML=topnear[k][9];
                                       break;
                                   }
                        }
                      var ctx2 = document.getElementById("Canvas");
                      var ctx3=ctx2.getContext("2d");
-                  if(oldcurrentselected!=-1){
-                         ctx3.clearRect(box_xy[oldcurrentselected][0]-4, box_xy[oldcurrentselected][1]-4, box_xy[oldcurrentselected][2]+8, box_xy[oldcurrentselected][3]+8);
+                  if(oldcurrentselected!=-1)
+                 {
                      ctx3.beginPath();
-                     ctx3.rect(box_xy[oldcurrentselected][0], box_xy[oldcurrentselected][1],box_xy[oldcurrentselected][2], box_xy[oldcurrentselected][3])
                      ctx3.lineWidth = 1;
-                     ctx3.strokeStyle = "White";
-                     ctx3.stroke();}
-                 ctx3.clearRect(box_xy[currentselected][0]-1, box_xy[currentselected][1]-1, box_xy[currentselected][2]+2, box_xy[currentselected][3]+2);
+                     ctx3.strokeStyle = "yellow"
+                     ctx3.moveTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                     for(var j = 1; j < contour[oldcurrentselected].length; j++)
+                     {
+                         ctx3.lineTo(contour[oldcurrentselected][j][0], contour[oldcurrentselected][j][1]);
+                     }
+                     ctx3.lineTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                     ctx3.stroke();
+                 }
                  ctx3.beginPath();
-                 ctx3.rect( box_xy[currentselected][0],box_xy[currentselected][1] , box_xy[currentselected][2],box_xy[currentselected][3])
-                 ctx3.lineWidth = 4;
-                 ctx3.strokeStyle = "#FF0000";
+                 ctx3.lineWidth = 1;
+                 ctx3.strokeStyle = "red"
+                 ctx3.moveTo(contour[currentselected][0][0], contour[currentselected][0][1]);
+                 for(var j = 1; j < contour[currentselected].length; j++)
+                 {
+                     ctx3.lineTo(contour[currentselected][j][0], contour[currentselected][j][1]);
+                 }
+                 ctx3.lineTo(contour[currentselected][0][0], contour[currentselected][0][1]);
                  ctx3.stroke();
                      oldcurrentselected=currentselected}
                     )
@@ -414,54 +949,254 @@
          });
 
 
+          {###hover on  image#}
+           cvs = document.getElementById("Canvas");
+           ctx3 = cvs.getContext('2d');
+            // var hover = false;
+            // function renderMap(contour) {
+            //              for(var i = 0; i < contour.length; i++)
+            //     {
+            //              ctx3.clearRect(0, 0, cvs.width, cvs.height);
+            //            ctx3.beginPath();
+            //            ctx3.lineWidth = 1;
+            //            ctx3.strokeStyle = "yellow"
+            //            ctx3.moveTo(contour[i][0][0], contour[i][0][1]);
+            //            for(var j = 1; j < contour[i].length; j++)
+            //            {
+            //                  ctx3.lineTo(contour[i][j][0], contour[i][j][1]);
+            //            }
+            //            ctx3.lineTo(contour[i][0][0], contour[i][0][1]);
+            //            ctx3.stroke();
+            //      }
+            // }
+            // // Render everything
+            // renderMap();
+            cvs.onmousemove = function(e) {
+                sign_hover=0
+                // Get the current mouse position
+                p = getEventPosition(e);
+
+
+                ctx3.clearRect(0, 0, cvs.width, cvs.height);
+                for(var k = 0; k < box_xy.length; k++)
+                {
+
+                   if((parseInt(box_xy[k][0])<=p.x && (parseInt(box_xy[k][0])+parseInt(box_xy[k][2]))>=p.x&&p.y<=(parseInt(box_xy[k][1])+parseInt(box_xy[k][3])) && p.y>=parseInt(box_xy[k][1]))||(k == currentselected))
+                   {
+
+                                    if(k != currentselected)
+                       {
+                          document.getElementById("hover-image").src="./static/type/RDGH_visEnhanced_all_cells/"+ID[k]+".png";
+                          sign_hover=1
+                       }
+                       ctx3.beginPath();
+                     ctx3.lineWidth = 1;
+                     ctx3.strokeStyle = "red"
+                     ctx3.moveTo(contour[k][0][0], contour[k][0][1]);
+                     for(var j = 1; j < contour[k].length; j++)
+                     {
+                         ctx3.lineTo(contour[k][j][0], contour[k][j][1]);
+                     }
+                     ctx3.lineTo(contour[k][0][0], contour[k][0][1]);
+                     ctx3.stroke();
+                   }
+                   else{
+                        ctx3.beginPath();
+                     ctx3.lineWidth = 1;
+                     ctx3.strokeStyle = "yellow"
+                     ctx3.moveTo(contour[k][0][0], contour[k][0][1]);
+                     for(var j = 1; j < contour[k].length; j++)
+                     {
+                         ctx3.lineTo(contour[k][j][0], contour[k][j][1]);
+                     }
+                     ctx3.lineTo(contour[k][0][0], contour[k][0][1]);
+                     ctx3.stroke();
+
+                   }
+                }
+                if ((currentselected!=-1)&&(sign_hover==0))
+                {
+
+                    document.getElementById("hover-image").src="./static/type/RDGH_visEnhanced_all_cells/"+ID[currentselected]+".png";
+                }
+                  // document.getElementById("hover-image").src="./static/type/RDGH_visEnhanced_all_cells/"+ID[currentselected]+".png";
+
+                //
+                //
+            }
+
+
+
+
+
+
+
 
 
            {###detect click on boxes#}
            cvs = document.getElementById("Canvas");
            ctx = cvs.getContext('2d');
-           cvs.addEventListener("click", function(e){
+           cvs.addEventListener("click", function(e)
+           {
                 var sign=0
-              p = getEventPosition(e);
-                     for(var k = 0; k < box_xy.length; k++)
-                       {
+                p = getEventPosition(e);
+                for(var k = 0; k < box_xy.length; k++)
+                   {
 
-                              if(parseInt(box_xy[k][0])<=p.x && (parseInt(box_xy[k][0])+parseInt(box_xy[k][2]))>=p.x&&p.y<=(parseInt(box_xy[k][1])+parseInt(box_xy[k][3])) && p.y>=parseInt(box_xy[k][1]))
-                                  {
-                                      currentselected=k
-                                      sign=1
-                                    document.getElementById("celltype").innerHTML="Class is "+types[k];
-                                      document.getElementById("cell-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cell-example.png";
-                                      document.getElementById("cytoplasm-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/cytoplasm-example.png";
-                                      document.getElementById("membrane-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/membrane-example.png";
-                                      document.getElementById("nucleus-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/nucleus-example.png";
-                                      document.getElementById("processes-example").src="./static/type/segmentation/"+filedirname+"/"+ID[k]+"/processes-example.png";
-                                    break
-                                  }
-                       }
-                     if(sign==0){
-                         alert("NoneSelected")
-                     }
-                     else{
-                         var ctx2 = document.getElementById("Canvas");
-                     var ctx3=ctx2.getContext("2d");
-                     if(oldcurrentselected!=-1){
-                         ctx3.clearRect(box_xy[oldcurrentselected][0]-4, box_xy[oldcurrentselected][1]-4, box_xy[oldcurrentselected][2]+8, box_xy[oldcurrentselected][3]+8);
+                          if(parseInt(box_xy[k][0])<=p.x && (parseInt(box_xy[k][0])+parseInt(box_xy[k][2]))>=p.x&&p.y<=(parseInt(box_xy[k][1])+parseInt(box_xy[k][3])) && p.y>=parseInt(box_xy[k][1]))
+                              {
+                                  currentselected=k
+                                  sign=1
+                                      document.getElementById("description").innerHTML="Current ID is "+ID[k];
+                                  document.getElementById("one").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][0])+".png";
+                                  document.getElementById("two").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][1])+".png";
+                                  document.getElementById("three").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][2])+".png";
+                                  document.getElementById("four").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][3])+".png";
+                                  document.getElementById("five").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][4])+".png";
+                                  document.getElementById("six").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][5])+".png";
+                                  document.getElementById("seven").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][6])+".png";
+                                  document.getElementById("eight").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][7])+".png";
+                                  document.getElementById("nine").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][8])+".png";
+                                  document.getElementById("ten").src="./static/type/RDGH_visEnhanced_all_cells/"+(topnear[k][9])+".png";
+                                  document.getElementById("one_").innerHTML= topnear[k][0];
+                                  document.getElementById("two_").innerHTML=topnear[k][1];
+                                  document.getElementById("three_").innerHTML=topnear[k][2];
+                                  document.getElementById("four_").innerHTML=topnear[k][3];
+                                  document.getElementById("five_").innerHTML=topnear[k][4];
+                                  document.getElementById("six_").innerHTML=topnear[k][5];
+                                  document.getElementById("seven_").innerHTML=topnear[k][6];
+                                  document.getElementById("eight_").innerHTML=topnear[k][7];
+                                  document.getElementById("nine_").innerHTML=topnear[k][8];
+                                  document.getElementById("ten_").innerHTML=topnear[k][9];
+                                break
+                              }
+                   }
+             if(sign==0){
+                 alert("NoneSelected")
+             }
+             else{
+                 var ctx2 = document.getElementById("Canvas");
+                 var ctx3=ctx2.getContext("2d");
+                 if(oldcurrentselected!=-1)
+                 {
                      ctx3.beginPath();
-                     ctx3.rect(box_xy[oldcurrentselected][0], box_xy[oldcurrentselected][1],box_xy[oldcurrentselected][2], box_xy[oldcurrentselected][3])
                      ctx3.lineWidth = 1;
-                     ctx3.strokeStyle = "White";
-                     ctx3.stroke();}
-                 ctx3.clearRect(box_xy[currentselected][0]-1, box_xy[currentselected][1]-1, box_xy[currentselected][2]+2, box_xy[currentselected][3]+2);
+                     ctx3.strokeStyle = "yellow"
+                     ctx3.moveTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                     for(var j = 1; j < contour[oldcurrentselected].length; j++)
+                     {
+                         ctx3.lineTo(contour[oldcurrentselected][j][0], contour[oldcurrentselected][j][1]);
+                     }
+                     ctx3.lineTo(contour[oldcurrentselected][0][0], contour[oldcurrentselected][0][1]);
+                     ctx3.stroke();
+                 }
                  ctx3.beginPath();
-                 ctx3.rect( box_xy[currentselected][0],box_xy[currentselected][1] , box_xy[currentselected][2],box_xy[currentselected][3])
-                 ctx3.lineWidth = 4;
-                 ctx3.strokeStyle = "#FF0000";
+                 ctx3.lineWidth = 1;
+                 ctx3.strokeStyle = "red"
+                 ctx3.moveTo(contour[currentselected][0][0], contour[currentselected][0][1]);
+                 for(var j = 1; j < contour[currentselected].length; j++)
+                 {
+                     ctx3.lineTo(contour[currentselected][j][0], contour[currentselected][j][1]);
+                 }
+                 ctx3.lineTo(contour[currentselected][0][0], contour[currentselected][0][1]);
                  ctx3.stroke();
                  oldcurrentselected=currentselected
-                    highx =features[currentselected][0]
-                    highy =features[currentselected][1]
-                    var MyScatter = echarts.init(document.getElementById('Scatter'));
-                    MyScatter.setOption(option);
+                 highx =features[currentselected][0]
+                 highy =features[currentselected][1]
+                 var MyScatter = echarts.init(document.getElementById('Scatter'));
+                //  option_click =   option = {
+                //     tooltip: {
+                //         /*返回需要的信息*/
+                //         formatter: function (param) {
+                //             var value = param.value;
+                //             return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 16px;padding-bottom: 7px;margin-bottom: 7px;"> ' + value[0] + '  ' + value[1]  +
+                //                 '</div>';
+                //         },
+                //         trigger: 'item',
+                //           axisPointer: {
+                //               type: 'cross'
+                //             }
+                //     },
+                //
+                //     toolbox:{
+                //     right: 20,
+                //           feature: {
+                //             dataZoom: {}
+                //           }
+                //
+                //     },
+                //     dataZoom: [
+                //           {
+                //             type: 'inside'
+                //           },
+                //           {
+                //             type: 'slider',
+                //             showDataShadow: false,
+                //             handleIcon:
+                //               'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                //             handleSize: '80%'
+                //           },
+                //           {
+                //             type: 'inside',
+                //             orient: 'vertical'
+                //           },
+                //           {
+                //             type: 'slider',
+                //             orient: 'vertical',
+                //             showDataShadow: false,
+                //             handleIcon:
+                //               'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+                //             handleSize: '80%'
+                //           }
+                //         ],
+                //
+                //
+                //
+                //     xAxis: {
+                //         type: 'value',
+                //         name: "X",
+                //     },
+                //     yAxis: {
+                //         type: 'value',
+                //         name: "Y",
+                //     },
+                //     series: [{
+                //
+                //         name: "ID",
+                //         data: data,
+                //         symbolSize: 5,
+                //         type: 'scatter',
+                //         symbolSize:function (params) {
+                //                     var first=20
+                //                     var second=1
+                //             if(highx==params[0] && highy==params[1]){
+                //                                         return first;
+                //                                     }else {
+                //                                         return second;
+                //                                     }
+                //                 },
+                //         itemStyle: {
+                //                  normal: {
+                //                     label:{show:false},
+                //                     color: function (params){
+                //                        //通过判断选中的名字改变柱子的颜色样式
+                //                         if (currentselected == -1) {
+                //                          return '#ffc0cb';
+                //                         }
+                //                         else
+                //                         {
+                //                         if (highx==params.value[0] && highy==params.value[1]) {
+                //                             return '#261154';
+                //                         } else {
+                //                             return '#ffc0cb';
+                //                         }
+                //                         }
+                //
+                //             }
+                //           },
+                //     }}]
+                // };
+                 MyScatter.setOption(option);
                }
               //判断点击了那个圆
             }, false);
@@ -520,34 +1255,52 @@
     <div class="container-fluid">
     <div class="row m-0">
     <div class="col-6 ">
-            <img id="img1" style="height: 700px;width: 700px;position: absolute;top: 90px;left: 30px " src="./static/type/images/0-13000.png" />
+            <img id="img1" style="height: 700px;width: 700px;position: absolute;top: 90px;left: 30px " src="./static/type/RDGH_visEnhanced_images/0-1000.png" />
             <canvas width="700" height="700"style="position: absolute;top: 90px;left: 30px;" id="Canvas"></canvas>
             <ul class="pagination pagination-sm" style="left: 200px;top: 800px;position: absolute;">
                 <li class="page-item" id="page-Previous" ><a class="page-link" href="#">Previous</a></li>
-                <li class="page-item active" id="page-1"><a class="page-link" href="#">1</a></li>
-                <li class="page-item" id="page-2"><a class="page-link" href="#">2</a></li>
-                <li class="page-item" id="page-3"><a class="page-link" href="#">3</a></li>
-                <li class="page-item" id="page-4"><a class="page-link" href="#">4</a></li>
-                <li class="page-item" id="page-5"><a class="page-link" href="#">5</a></li>
+                <li class="page-item" id="page-1"><a class="page-link" href="#"></a></li>
+                <li class="page-item" id="page-2"><a class="page-link" href="#"></a></li>
+                <li class="page-item" id="page-3"><a class="page-link" href="#"></a></li>
+                <li class="page-item" id="page-4"><a class="page-link" href="#"></a></li>
+                <li class="page-item" id="page-5"><a class="page-link" href="#"></a></li>
                 <li class="page-item" id="page-Next"><a class="page-link" href="#">Next</a></li>
             </ul>
+             <input class="input" style="left: 250px;top: 900px;position: absolute;" autocomplete=off type="text" name="jump-number" >
+
+             <button class="button" style="left: 320px;top: 900px;position: absolute;"id="jump-page">Jump</button> <br>
+
+           <div class="row">
+                <div class="col"> <img style="position: absolute;top: 100px;left: 750px;width: 200px;height: 200px"  id="hover-image" src="./static/type/RDGH_visEnhanced_all_cells/1.png"/></div>
+            </div>
     </div>
     <div class="col-6 ">
         <div style="height: 500px;width:700px; top: 80px;margin-right: 0px" id="Scatter"></div>
         <div style="height: 250px;width: 700px; top: 500px;" id="Types">
             <br>
              <br>
-        <p3  id="celltype">
-          &emsp;    &emsp;  &emsp;  &emsp;  &emsp;  &emsp;  &emsp;  &emsp;  &emsp;     Class is None
+            <br>
+             <br>
+            <br>
+             <br>
+        <p3  id="description">
+          &emsp;    &emsp;  &emsp;  &emsp;  &emsp;  &emsp;  &emsp;  &emsp;  &emsp;   &emsp; &emsp; &emsp;&emsp; &emsp;
         </p3>
             <br>
             <br>
             <div class="row">
-                <div class="col"> Cell<img style="position: relative;width: 100px;height: 100px" id="cell-example" src="./static/type/segmentation/5000-5000/185363/cell-example.png" /></div>
-                <div class="col">cytoplasm<img style="position: relative;width: 100px;height: 100px"id="cytoplasm-example" src="./static/type/segmentation/5000-5000/185363/cytoplasm-example.png" /></div>
-                <div class="col">membrane <img style="position: relative;width: 100px;height: 100px"id="membrane-example" src="./static/type/segmentation/5000-5000/185363/membrane-example.png" /></div>
-                <div class="col">nucleus<img style="position: relative;width: 100px;height: 100px"id="nucleus-example" src="./static/type/segmentation/5000-5000/185363/nucleus-example.png" /></div>
-                <div class="col">processes <img style="position: relative;width: 100px;height: 100px"id="processes-example" src="./static/type/segmentation/5000-5000/185363/processes-example.png" /></div>
+                <div class="col"> <p id="one_">        </p> <img style="position: relative;width: 100px;height: 100px"  id="one" /></div>
+                <div class="col"> <p id="two_">        </p><img style="position: relative;width: 100px;height: 100px"id="two"  /></div>
+                <div class="col"> <p id="three_">      </p>  <img style="position: relative;width: 100px;height: 100px"id="three"/></div>
+                <div class="col"> <p id="four_">       </p> <img style="position: relative;width: 100px;height: 100px"id="four"  /></div>
+                <div class="col"> <p id="five_">       </p> <img style="position: relative;width: 100px;height: 100px"id="five"  /></div>
+            </div>
+            <div class="row">
+                <div class="col"> <p id="six_">       </p> <img style="position: relative;width: 100px;height: 100px" id="six" /></div>
+                <div class="col"> <p id="seven_">      </p>  <img style="position: relative;width: 100px;height: 100px"id="seven"/></div>
+                <div class="col"> <p id="eight_">      </p>  <img style="position: relative;width: 100px;height: 100px"id="eight"/></div>
+                <div class="col"> <p id="nine_">       </p> <img style="position: relative;width: 100px;height: 100px"id="nine"/></div>
+                <div class="col"> <p id="ten_">      </p>  <img style="position: relative;width: 100px;height: 100px"id="ten"/></div>
             </div>
         </div>
 
